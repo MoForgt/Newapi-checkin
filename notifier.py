@@ -18,6 +18,10 @@ except ImportError:
     requests = None
 
 
+# NewAPI 默认额度换算比例：500000 额度 = $1
+QUOTA_PER_UNIT = 500000
+
+
 def format_quota(quota: int) -> str:
     """格式化额度显示"""
     if quota >= 1000000:
@@ -26,6 +30,32 @@ def format_quota(quota: int) -> str:
         return f'{quota / 1000:.2f}K'
     else:
         return str(quota)
+
+
+def format_money(quota) -> str:
+    """把额度（quota）换算成金额显示，如 $3.21"""
+    try:
+        value = float(quota or 0) / QUOTA_PER_UNIT
+    except (TypeError, ValueError):
+        value = 0.0
+    if value and abs(value) < 0.01:
+        return f'${value:.4f}'
+    return f'${value:,.2f}'
+
+
+def format_tokens(count) -> str:
+    """格式化 token 数量，如 12.34M"""
+    try:
+        count = int(count or 0)
+    except (TypeError, ValueError):
+        return '0'
+    if count >= 1_000_000_000:
+        return f'{count / 1_000_000_000:.2f}B'
+    if count >= 1_000_000:
+        return f'{count / 1_000_000:.2f}M'
+    if count >= 1000:
+        return f'{count / 1000:.2f}K'
+    return str(count)
 
 
 def build_report_text(results: List[Dict[str, Any]], execution_time: str) -> str:

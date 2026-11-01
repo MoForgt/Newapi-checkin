@@ -3,1186 +3,2152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NewAPI 自动签到</title>
+    <title>NewAPI 配置生成器</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg: #f6f7f9;
+            --surface: #ffffff;
+            --surface-2: #f8f9fb;
+            --border: #e7e9ee;
+            --border-strong: #d6d9e0;
+            --text: #14161a;
+            --text-2: #565d6b;
+            --text-3: #8d95a3;
+            --accent: #4f46e5;
+            --accent-2: #6366f1;
+            --accent-soft: #eef0ff;
+            --ok: #059669;
+            --ok-soft: #ecfdf5;
+            --danger: #dc2626;
+            --danger-soft: #fef2f2;
+            --warn: #b45309;
+            --warn-soft: #fffbeb;
+            --code-bg: #12151c;
+            --code-text: #e6e9ef;
+            --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 12px 28px -18px rgba(16, 24, 40, .22);
+            --radius: 16px;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 40%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-                        radial-gradient(circle at 70% 60%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
-                        radial-gradient(circle at 50% 80%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
-            animation: bgFloat 20s ease-in-out infinite;
-        }
-
-        @keyframes bgFloat {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            25% { transform: translate(2%, -2%) rotate(1deg); }
-            50% { transform: translate(-1%, 3%) rotate(-1deg); }
-            75% { transform: translate(3%, -1%) rotate(0.5deg); }
-        }
-
-        .container {
-            max-width: 620px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            overflow: hidden;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5), 0 0 120px rgba(99, 102, 241, 0.1);
-            animation: containerFadeIn 1s ease-out;
-        }
-
-        @keyframes containerFadeIn {
-            from { opacity: 0; transform: translateY(30px) scale(0.97); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .header {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
-            color: white;
-            padding: 50px 40px 45px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: pulse 8s ease-in-out infinite;
-        }
-
-        .header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background: linear-gradient(to top, rgba(26, 26, 46, 0.3), transparent);
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-        }
-
-        .header-icon {
-            font-size: 56px;
-            margin-bottom: 16px;
-            display: inline-block;
-            animation: iconBounce 3s ease-in-out infinite;
-            position: relative;
-        }
-
-        @keyframes iconBounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
-        }
-
-        .header h1 {
-            font-size: 36px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            letter-spacing: -0.5px;
-            position: relative;
-        }
-
-        .header p {
-            opacity: 0.95;
-            font-size: 17px;
-            line-height: 1.5;
-            position: relative;
-        }
-
-        .content {
-            padding: 40px 35px;
-            color: rgba(255, 255, 255, 0.85);
-        }
-
-        .feature {
-            margin-bottom: 28px;
-            padding: 24px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 16px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            animation: featureFadeIn 0.6s ease-out backwards;
-        }
-
-        .feature:nth-child(1) { animation-delay: 0.2s; }
-        .feature:nth-child(2) { animation-delay: 0.35s; }
-
-        @keyframes featureFadeIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .feature:hover {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: rgba(99, 102, 241, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
-        }
-
-        .feature h3 {
-            color: #a78bfa;
-            margin-bottom: 12px;
-            font-size: 20px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .feature p {
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.7;
-            font-size: 15px;
-        }
-
-        .features-list {
-            list-style: none;
-            margin-top: 16px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .features-list li {
-            padding: 12px 14px;
-            color: rgba(255, 255, 255, 0.75);
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 10px;
+            padding: 40px 20px 24px;
             font-size: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
         }
 
-        .features-list li:hover {
-            background: rgba(99, 102, 241, 0.1);
-            border-color: rgba(99, 102, 241, 0.2);
-            transform: translateX(4px);
-        }
+        .container { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; }
 
-        .features-list li::before {
-            content: '✓';
-            color: #34d399;
-            font-weight: bold;
-            font-size: 13px;
+        /* 顶部 */
+        .header { padding: 0 2px 24px; }
+        .brand { display: flex; align-items: center; gap: 11px; }
+        .brand-mark {
+            width: 34px; height: 34px; flex: 0 0 34px; border-radius: 10px;
+            display: grid; place-items: center;
+            background: var(--accent);
+            color: #fff; font-size: 16px; font-weight: 700;
+            box-shadow: 0 6px 16px -8px var(--accent);
         }
-
-        .btn-container {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-top: 36px;
-            animation: btnFadeIn 0.6s ease-out 0.5s backwards;
+        .header h1 { font-size: 21px; font-weight: 650; letter-spacing: -.015em; line-height: 1.3; }
+        .header p { margin-top: 10px; color: var(--text-2); font-size: 13.5px; }
+        .header-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+        .header-badge {
+            font-size: 12px; color: var(--text-2); background: var(--surface);
+            border: 1px solid var(--border); padding: 3px 11px; border-radius: 999px;
         }
-
-        @keyframes btnFadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        /* 按钮 */
         .btn {
-            display: block;
-            padding: 18px 28px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            border-radius: 14px;
-            font-weight: 600;
-            font-size: 17px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 6px 24px rgba(99, 102, 241, 0.35);
-            position: relative;
-            overflow: hidden;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            height: 36px; padding: 0 15px; border-radius: 10px; border: 1px solid transparent;
+            background: transparent; color: var(--text);
+            font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
+            white-space: nowrap; cursor: pointer;
+            transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
+        }
+        .btn:active { transform: translateY(1px); }
+        .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 6px 16px -10px var(--accent); }
+        .btn-primary:hover { background: var(--accent-2); }
+        .btn-success { background: var(--ok); color: #fff; box-shadow: 0 6px 16px -10px var(--ok); }
+        .btn-success:hover { filter: brightness(1.06); }
+        .btn-secondary { background: var(--surface); border-color: var(--border); color: var(--text-2); }
+        .btn-secondary:hover { border-color: var(--border-strong); color: var(--text); background: var(--surface-2); }
+        .btn-danger { background: transparent; border-color: var(--border); color: var(--danger); }
+        .btn-danger:hover { background: var(--danger-soft); border-color: transparent; }
+        .btn-sm { height: 32px; padding: 0 12px; font-size: 12.5px; border-radius: 9px; }
+        .btn-xs { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 8px; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .toolbar-divider { width: 1px; height: 22px; align-self: center; background: var(--border); margin: 0 4px; }
+
+        /* 表单 */
+        .form-group { margin-bottom: 14px; }
+        .form-group:last-child { margin-bottom: 0; }
+        .site-site-fields .form-group,
+        .account-fields .form-group,
+        .cloud-fields .form-group { margin-bottom: 0; }
+        .form-group label, label {
+            display: block; font-size: 12.5px; font-weight: 500;
+            color: var(--text-2); margin-bottom: 6px;
+        }
+        input[type="text"], input[type="password"], select, textarea {
+            width: 100%; padding: 9px 12px;
+            border: 1px solid var(--border); border-radius: 10px;
+            background: var(--surface-2); color: var(--text);
+            font-family: inherit; font-size: 13.5px; line-height: 1.5;
+            transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+        }
+        select { cursor: pointer; }
+        input::placeholder, textarea::placeholder { color: var(--text-3); }
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: var(--accent); background: var(--surface);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+        small { display: block; margin-top: 6px; font-size: 11.5px; line-height: 1.55; color: var(--text-3); }
+        .required { color: var(--danger); }
+        .label-hint { color: var(--text-3); font-weight: 400; }
+        .hint-amber { color: var(--warn); }
+        code {
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 12px; padding: 1px 6px; border-radius: 6px;
+            background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2);
         }
 
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
+        /* 站点卡片 */
+        .site-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); margin-bottom: 14px;
+            box-shadow: var(--shadow); overflow: hidden;
+        }
+        .site-header {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 13px 18px; background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+        }
+        .site-title {
+            display: flex; align-items: center; gap: 9px;
+            font-size: 13.5px; font-weight: 600; letter-spacing: -.01em;
+        }
+        .site-title::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+        .site-actions { display: flex; gap: 6px; }
+        .site-body { padding: 18px; }
+        .site-site-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+        .url-input-wrapper { display: flex; gap: 8px; }
+        .url-input-wrapper input { flex: 1 1 auto; min-width: 0; }
+        .url-jump-btn {
+            flex: 0 0 36px; width: 36px; height: 36px; border-radius: 10px;
+            border: 1px solid var(--border); background: var(--surface);
+            color: var(--text-3); font-size: 15px; cursor: pointer;
+            transition: color .15s ease, border-color .15s ease;
+        }
+        .url-jump-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .accounts-divider { border: 0; border-top: 1px dashed var(--border-strong); margin: 20px 0 16px; }
+        .accounts-label {
+            font-size: 11px; font-weight: 600; letter-spacing: .1em;
+            text-transform: uppercase; color: var(--text-3); margin-bottom: 10px;
+        }
+        .account-item {
+            border: 1px solid var(--border); border-radius: 12px;
+            padding: 14px 15px; margin-bottom: 10px; background: var(--surface-2);
+        }
+        .account-item-header {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px; margin-bottom: 12px;
+        }
+        .account-item-title { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+        .account-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+        .account-login-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .add-account-row { margin-top: 4px; }
+        .protect-probe {
+            margin-top: 14px; padding: 10px 12px; border-radius: 10px;
+            border: 1px dashed var(--border-strong); background: var(--surface-2);
+            font-size: 12.5px; color: var(--text-2);
+        }
+        .protect-chip {
+            display: inline-flex; align-items: center; margin-left: 4px; padding: 1px 8px;
+            border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 11.5px;
         }
 
-        .btn:hover::before {
-            left: 100%;
+        /* 区块卡片 */
+        .cloud-section, .import-section, .result-section, .tips {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px; margin-top: 14px;
+            box-shadow: var(--shadow);
         }
-
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 40px rgba(37, 99, 235, 0.45);
+        .cloud-section h3, .import-section h3, .result-section h3 {
+            font-size: 15px; font-weight: 650; letter-spacing: -.01em; margin-bottom: 6px;
         }
-
-        .btn:active {
-            transform: translateY(-1px);
+        .cloud-section > p, .import-section > p { color: var(--text-3); font-size: 12.5px; margin-bottom: 14px; }
+        .cloud-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .cloud-preset-btn {
+            padding: 6px 13px; border-radius: 999px;
+            border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2);
+            font-family: inherit; font-size: 12.5px; cursor: pointer; transition: all .15s ease;
         }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
-            box-shadow: 0 6px 24px rgba(5, 150, 105, 0.35);
+        .cloud-preset-btn:hover { border-color: var(--border-strong); color: var(--text); }
+        .cloud-preset-btn.active {
+            background: var(--accent-soft); border-color: transparent;
+            color: var(--accent); font-weight: 600;
         }
-
-        .btn-secondary:hover {
-            box-shadow: 0 10px 40px rgba(5, 150, 105, 0.45);
+        .cloud-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+        .cloud-path-row { margin-top: 14px; }
+        .cloud-status {
+            display: none; margin-top: 14px; padding: 10px 13px; border-radius: 10px;
+            font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word;
         }
-
-        .btn-secondary:active {
-            transform: translateY(-1px);
+        .cloud-status.success { background: var(--ok-soft); color: var(--ok); }
+        .cloud-status.error { background: var(--danger-soft); color: var(--danger); }
+        .cloud-status.info, .cloud-status.warning { background: var(--surface-2); color: var(--text-2); }
+        .cors-proxy-section { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border-strong); }
+        .cors-proxy-toggle {
+            display: flex; align-items: center; gap: 9px;
+            font-size: 12.5px; color: var(--text-2); cursor: pointer;
         }
-
-        .footer {
-            text-align: center;
-            padding: 24px 35px;
-            background: rgba(255, 255, 255, 0.02);
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 14px;
+        .cors-proxy-toggle input { accent-color: var(--accent); width: 14px; height: 14px; }
+        .cors-proxy-picker-btn {
+            width: 100%; display: flex; align-items: center; justify-content: space-between;
+            gap: 10px; margin-top: 10px; padding: 9px 12px; border-radius: 10px;
+            border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+            font-family: inherit; font-size: 13px; text-align: left; cursor: pointer;
+            transition: border-color .15s ease;
         }
-
-        .footer a {
-            color: #a78bfa;
-            text-decoration: none;
-            transition: color 0.2s;
-            position: relative;
+        .cors-proxy-picker-btn:hover { border-color: var(--accent); }
+        .cors-proxy-picker-btn.selected { border-color: var(--accent); background: var(--accent-soft); }
+        .cors-proxy-picker-arrow { color: var(--text-3); }
+        .cors-proxy-warning {
+            margin-top: 12px; padding: 10px 12px; border-radius: 10px;
+            background: var(--warn-soft); color: var(--warn); font-size: 12px; line-height: 1.65;
         }
+        .cors-proxy-friendly-name { font-size: 11.5px; color: var(--text-3); margin-top: 6px; }
 
-        .footer a::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 0;
-            height: 1px;
-            background: #a78bfa;
-            transition: width 0.3s;
+        /* 通知 / 提示 */
+        .notice, .cors-notice {
+            display: flex; gap: 10px; align-items: flex-start;
+            padding: 12px 14px; margin-bottom: 16px; border-radius: 12px;
+            background: var(--accent-soft); color: var(--accent); font-size: 12.5px; line-height: 1.65;
         }
-
-        .footer a:hover {
-            color: #c4b5fd;
-        }
-
-        .footer a:hover::after {
-            width: 100%;
-        }
-
-        @media (max-width: 480px) {
-            body { padding: 12px; }
-
-            .container { border-radius: 16px; }
-
-            .header { padding: 35px 25px 30px; }
-
-            .header-icon { font-size: 42px; }
-
-            .header h1 { font-size: 28px; }
-
-            .header p { font-size: 15px; }
-
-            .content { padding: 25px 20px; }
-
-            .feature { padding: 18px; }
-
-            .features-list { grid-template-columns: 1fr; }
-
-            .btn { padding: 16px 24px; font-size: 16px; }
-        }
-
-        /* =======================================================
-           液态玻璃主题（Liquid Glass，iOS 26 / macOS Tahoe 风格）
-           ======================================================= */
-
-        body {
-            background: linear-gradient(160deg, #dbeafe 0%, #e0f2fe 35%, #cffafe 65%, #e0e7ff 100%);
-            background-attachment: fixed;
-        }
-
-        body::before {
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background:
-                radial-gradient(850px circle at 8% 12%, rgba(14, 165, 233, 0.62) 0%, transparent 60%),
-                radial-gradient(950px circle at 92% 6%, rgba(37, 99, 235, 0.55) 0%, transparent 58%),
-                radial-gradient(1050px circle at 80% 74%, rgba(6, 182, 212, 0.55) 0%, transparent 62%),
-                radial-gradient(800px circle at 12% 82%, rgba(59, 130, 246, 0.48) 0%, transparent 60%),
-                radial-gradient(650px circle at 48% 42%, rgba(125, 211, 252, 0.4) 0%, transparent 65%),
-                radial-gradient(500px circle at 68% 30%, rgba(45, 212, 191, 0.3) 0%, transparent 62%);
-            /* 静态壁纸：动画会导致 backdrop-filter 每帧重算，严重掉帧 */
-            animation: none;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.32);
-            backdrop-filter: blur(52px) saturate(200%);
-            -webkit-backdrop-filter: blur(52px) saturate(200%);
-            border: 1px solid rgba(255, 255, 255, 0.65);
-            box-shadow:
-                0 24px 70px rgba(15, 23, 42, 0.16),
-                0 2px 8px rgba(15, 23, 42, 0.05),
-                inset 0 1px 0 rgba(255, 255, 255, 0.9),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.35);
-        }
-
-        .header {
-            background: linear-gradient(135deg, rgba(30, 64, 175, 0.68) 0%, rgba(14, 165, 233, 0.55) 100%);
-            backdrop-filter: blur(28px) saturate(160%);
-            -webkit-backdrop-filter: blur(28px) saturate(160%);
-        }
-
-        .header::after {
-            background: linear-gradient(to top, rgba(219, 234, 254, 0.25), transparent);
-        }
-
-        .header h1 {
-            text-shadow: 0 2px 24px rgba(255, 255, 255, 0.35);
-        }
-
-        .content {
-            color: #1e293b;
-        }
-
-        .feature {
-            background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(28px) saturate(170%);
-            -webkit-backdrop-filter: blur(28px) saturate(170%);
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            box-shadow:
-                0 8px 32px rgba(15, 23, 42, 0.07),
-                inset 0 1px 0 rgba(255, 255, 255, 1),
-                inset 0 2px 6px rgba(255, 255, 255, 0.35),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.3);
-        }
-
-        .feature:hover {
-            background: rgba(255, 255, 255, 0.48);
-            border-color: rgba(255, 255, 255, 0.95);
-            box-shadow:
-                0 14px 44px rgba(37, 99, 235, 0.16),
-                inset 0 1px 0 rgba(255, 255, 255, 1);
-        }
-
-        .feature h3 {
-            color: #1e40af;
-            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-        }
-
-        .feature p {
-            color: #334155;
-        }
-
-        .features-list li {
-            color: #334155;
-            background: rgba(255, 255, 255, 0.42);
-            border: 1px solid rgba(255, 255, 255, 0.75);
-            border-radius: 999px;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-        }
-
-        .features-list li:hover {
-            background: rgba(255, 255, 255, 0.7);
-            border-color: rgba(255, 255, 255, 1);
-        }
-
-        .features-list li::before {
-            color: #059669;
-        }
-
-        .btn {
-            border-radius: 999px;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.9) 0%, rgba(14, 165, 233, 0.9) 100%);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow:
-                0 8px 24px rgba(37, 99, 235, 0.35),
-                inset 0 1px 0 rgba(255, 255, 255, 0.55),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.15);
-        }
-
-        .btn:hover {
-            box-shadow:
-                0 12px 34px rgba(37, 99, 235, 0.45),
-                inset 0 1px 0 rgba(255, 255, 255, 0.7);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, rgba(5, 150, 105, 0.88) 0%, rgba(16, 185, 129, 0.88) 100%);
-            box-shadow:
-                0 8px 24px rgba(5, 150, 105, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.55);
-        }
-
-        .btn-secondary:hover {
-            box-shadow:
-                0 12px 34px rgba(5, 150, 105, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.7);
-        }
-
-        .footer {
-            background: rgba(255, 255, 255, 0.3);
-            border-top: 1px solid rgba(255, 255, 255, 0.6);
-            color: #64748b;
-        }
-
-        .footer a {
-            color: #1e40af;
-        }
-
-        .footer a::after {
-            background: #2563eb;
-        }
-
-        .footer a:hover {
-            color: #1d4ed8;
-        }
-
-        ::selection {
-            background: rgba(37, 99, 235, 0.22);
-        }
-
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
+        .cors-notice strong { display: block; font-weight: 600; }
+        .cors-icon { flex: 0 0 auto; font-size: 14px; }
+        .cloud-section .tips,
+        .result-section .tips,
+        .import-section .tips {
             background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(15, 23, 42, 0.18);
-            border-radius: 5px;
-        }
-
-        /* =======================================================
-           深色液态玻璃（Dark Liquid Glass）
-           深夜壁纸 + 发光极光色斑 + 深色玻璃层 + 高亮边缘
-           ======================================================= */
-
-        html[data-theme="dark"] body {
-            background: linear-gradient(170deg, #030814 0%, #061021 40%, #04101f 70%, #020a18 100%);
-            background-attachment: fixed;
-        }
-
-        html[data-theme="dark"] body::before {
-            background:
-                radial-gradient(900px circle at 10% 10%, rgba(14, 165, 233, 0.4) 0%, transparent 58%),
-                radial-gradient(1000px circle at 92% 8%, rgba(37, 99, 235, 0.38) 0%, transparent 58%),
-                radial-gradient(1100px circle at 80% 78%, rgba(6, 182, 212, 0.4) 0%, transparent 62%),
-                radial-gradient(850px circle at 12% 85%, rgba(99, 102, 241, 0.3) 0%, transparent 60%),
-                radial-gradient(700px circle at 48% 45%, rgba(13, 148, 136, 0.28) 0%, transparent 65%),
-                radial-gradient(550px circle at 65% 25%, rgba(56, 189, 248, 0.22) 0%, transparent 60%);
-        }
-
-        html[data-theme="dark"] .container {
-            background: rgba(8, 16, 34, 0.45);
-            backdrop-filter: blur(56px) saturate(190%);
-            -webkit-backdrop-filter: blur(56px) saturate(190%);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            box-shadow:
-                0 30px 90px rgba(0, 0, 0, 0.6),
-                inset 0 1px 0 rgba(255, 255, 255, 0.16),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.04);
-        }
-
-        html[data-theme="dark"] .content {
-            color: #cbd5e1;
-        }
-
-        html[data-theme="dark"] .header {
-            background: linear-gradient(135deg, rgba(30, 64, 175, 0.42) 0%, rgba(8, 145, 178, 0.32) 100%);
-            backdrop-filter: blur(32px) saturate(170%);
-            -webkit-backdrop-filter: blur(32px) saturate(170%);
-        }
-
-        html[data-theme="dark"] .header .header-badge, html[data-theme="dark"] .back-link {
-            background: rgba(255, 255, 255, 0.09);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
-        }
-
-        html[data-theme="dark"] .notice {
-            background: rgba(37, 99, 235, 0.14);
-            border: 1px solid rgba(96, 165, 250, 0.3);
-            color: #93c5fd;
-        }
-
-        html[data-theme="dark"] .cors-notice {
-            background: rgba(245, 158, 11, 0.09);
-            border: 1px solid rgba(245, 158, 11, 0.28);
-            color: #fcd34d;
-        }
-
-        html[data-theme="dark"] .cors-notice a {
-            color: #7dd3fc;
-        }
-
-        html[data-theme="dark"] .cors-notice a:hover {
-            color: #bae6fd;
-        }
-
-        html[data-theme="dark"] .cors-proxy-section {
-            background: rgba(245, 158, 11, 0.06);
-            border: 1px solid rgba(245, 158, 11, 0.22);
-        }
-
-        html[data-theme="dark"] .cors-proxy-section .cors-proxy-toggle {
-            color: #cbd5e1;
-        }
-
-        html[data-theme="dark"] .cors-proxy-section .cors-proxy-warning {
-            color: #f87171;
-        }
-
-        html[data-theme="dark"] .cors-proxy-picker-btn {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            color: #e2e8f0;
-        }
-
-        html[data-theme="dark"] .cors-proxy-picker-btn:hover {
-            border-color: rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        html[data-theme="dark"] .cors-proxy-custom-name {
-            color: #94a3b8;
-        }
-
-        html[data-theme="dark"] .site-card, html[data-theme="dark"] .cloud-section, html[data-theme="dark"] .import-section, html[data-theme="dark"] .result-section {
-            background: rgba(12, 22, 44, 0.38);
-            backdrop-filter: blur(36px) saturate(180%);
-            -webkit-backdrop-filter: blur(36px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow:
-                0 10px 40px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.14),
-                inset 0 2px 8px rgba(255, 255, 255, 0.04),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.04);
-        }
-
-        html[data-theme="dark"] .site-card:hover {
-            border-color: rgba(125, 211, 252, 0.4);
-            box-shadow:
-                0 16px 50px rgba(14, 165, 233, 0.18),
-                inset 0 1px 0 rgba(255, 255, 255, 0.22),
-                inset 0 2px 8px rgba(255, 255, 255, 0.05);
-        }
-
-        html[data-theme="dark"] .site-card::before {
-            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(125, 211, 252, 0.1) 0%, transparent 60%);
-        }
-
-        html[data-theme="dark"] .site-header {
-            background: rgba(255, 255, 255, 0.04);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        html[data-theme="dark"] .site-title {
-            color: #7dd3fc;
-        }
-
-        html[data-theme="dark"] .site-title::before {
-            background: linear-gradient(180deg, #38bdf8, #2563eb);
-        }
-
-        html[data-theme="dark"] .accounts-divider {
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        html[data-theme="dark"] .accounts-label {
-            color: #94a3b8;
-        }
-
-        html[data-theme="dark"] .form-group label {
-            color: #cbd5e1;
-            text-shadow: none;
-        }
-
-        html[data-theme="dark"] .form-group label .required {
-            color: #f87171;
-        }
-
-        html[data-theme="dark"] .form-group input {
-            background: rgba(4, 10, 24, 0.45);
-            backdrop-filter: blur(20px) saturate(160%);
-            -webkit-backdrop-filter: blur(20px) saturate(160%);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            color: #f1f5f9;
-            box-shadow:
-                inset 0 1px 2px rgba(0, 0, 0, 0.35),
-                inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        }
-
-        html[data-theme="dark"] .form-group input::placeholder {
-            color: #5b6b84;
-        }
-
-        html[data-theme="dark"] .form-group input:hover {
-            border-color: rgba(255, 255, 255, 0.28);
-            background: rgba(4, 10, 24, 0.55);
-        }
-
-        html[data-theme="dark"] .form-group input:focus {
-            border-color: rgba(125, 211, 252, 0.75);
-            background: rgba(4, 10, 24, 0.6);
-            box-shadow:
-                0 0 0 4px rgba(56, 189, 248, 0.18),
-                0 4px 20px rgba(14, 165, 233, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.12);
-        }
-
-        html[data-theme="dark"] .form-group small {
-            color: #94a3b8;
-            text-shadow: none;
-        }
-
-        html[data-theme="dark"] .form-group input[id*="acc-access-token"] {
-            border-color: rgba(56, 189, 248, 0.45);
-            background: rgba(14, 116, 180, 0.14);
-        }
-
-        html[data-theme="dark"] .form-group input[id*="acc-access-token"]:hover {
-            border-color: rgba(56, 189, 248, 0.7);
-            background: rgba(14, 116, 180, 0.22);
-        }
-
-        html[data-theme="dark"] .form-group input[id*="acc-access-token"]:focus {
-            border-color: rgba(125, 211, 252, 0.85);
-            background: rgba(14, 116, 180, 0.26);
-            box-shadow:
-                0 0 0 4px rgba(56, 189, 248, 0.22),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15);
-        }
-
-        html[data-theme="dark"] .url-jump-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: #7dd3fc;
-        }
-
-        html[data-theme="dark"] .url-jump-btn:hover {
-            background: rgba(56, 189, 248, 0.2);
-            border-color: rgba(125, 211, 252, 0.5);
-            color: #bae6fd;
-        }
-
-        html[data-theme="dark"] .account-item {
-            background: rgba(6, 13, 28, 0.32);
-            backdrop-filter: blur(28px) saturate(170%);
-            -webkit-backdrop-filter: blur(28px) saturate(170%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                inset 0 2px 5px rgba(255, 255, 255, 0.03),
-                0 2px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        html[data-theme="dark"] .account-item:hover {
-            border-color: rgba(125, 211, 252, 0.38);
-            background: rgba(10, 20, 42, 0.42);
-        }
-
-        html[data-theme="dark"] .account-item-title {
-            color: #7dd3fc;
-            background: rgba(56, 189, 248, 0.12);
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
-        }
-
-        html[data-theme="dark"] .btn-primary {
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.78) 0%, rgba(14, 165, 233, 0.78) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            box-shadow:
-                0 8px 28px rgba(14, 165, 233, 0.35),
-                inset 0 1px 0 rgba(255, 255, 255, 0.4),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-        }
-
-        html[data-theme="dark"] .btn-primary:hover {
-            box-shadow:
-                0 12px 40px rgba(14, 165, 233, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.55);
-        }
-
-        html[data-theme="dark"] .btn-success {
-            background: linear-gradient(135deg, rgba(5, 150, 105, 0.78) 0%, rgba(16, 185, 129, 0.78) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            box-shadow:
-                0 8px 28px rgba(16, 185, 129, 0.32),
-                inset 0 1px 0 rgba(255, 255, 255, 0.4),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-        }
-
-        html[data-theme="dark"] .btn-secondary {
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            color: #e2e8f0;
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.14),
-                0 2px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        html[data-theme="dark"] .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.14);
-            border-color: rgba(255, 255, 255, 0.32);
-            color: #ffffff;
-        }
-
-        html[data-theme="dark"] .btn-danger {
-            background: rgba(248, 113, 113, 0.12);
-            border: 1px solid rgba(248, 113, 113, 0.35);
-            color: #fca5a5;
-        }
-
-        html[data-theme="dark"] .btn-danger:hover {
-            background: rgba(248, 113, 113, 0.24);
-            border-color: rgba(248, 113, 113, 0.55);
-        }
-
-        html[data-theme="dark"] .copy-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            color: #cbd5e1;
-        }
-
-        html[data-theme="dark"] .copy-btn:hover {
-            background: rgba(56, 189, 248, 0.2);
-            border-color: rgba(125, 211, 252, 0.5);
-            color: #bae6fd;
-        }
-
-        html[data-theme="dark"] .tips {
-            background: rgba(245, 158, 11, 0.07);
-            backdrop-filter: blur(24px) saturate(150%);
-            -webkit-backdrop-filter: blur(24px) saturate(150%);
-            border: 1px solid rgba(245, 158, 11, 0.26);
-            border-left: 3px solid rgba(245, 158, 11, 0.65);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        }
-
-        html[data-theme="dark"] .tips h4 {
-            color: #fbbf24;
-        }
-
-        html[data-theme="dark"] .tips ul {
-            color: #cbd5e1;
-        }
-
-        html[data-theme="dark"] .tips code {
-            background: rgba(56, 189, 248, 0.12);
-            color: #7dd3fc;
-        }
-
-        html[data-theme="dark"] .result-section {
-            border-top: 2px solid rgba(56, 189, 248, 0.55);
-        }
-
-        html[data-theme="dark"] .result-section h3 {
-            color: #f1f5f9;
-        }
-
-        html[data-theme="dark"] .code-block {
-            background: rgba(2, 8, 22, 0.62);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow:
-                0 10px 40px rgba(0, 0, 0, 0.45),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-
-        html[data-theme="dark"] .tabs {
-            background: rgba(4, 10, 24, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-        }
-
-        html[data-theme="dark"] .tab {
-            color: #94a3b8;
-        }
-
-        html[data-theme="dark"] .tab:hover {
-            color: #e2e8f0;
-            background: rgba(255, 255, 255, 0.06);
-        }
-
-        html[data-theme="dark"] .tab.active {
-            background: rgba(255, 255, 255, 0.14);
-            color: #ffffff;
-            box-shadow:
-                0 2px 10px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        }
-
-        html[data-theme="dark"] .cloud-section {
-            background: rgba(6, 40, 32, 0.32);
-            border: 1px solid rgba(16, 185, 129, 0.22);
-        }
-
-        html[data-theme="dark"] .cloud-section h3 {
-            color: #34d399;
-        }
-
-        html[data-theme="dark"] .cloud-section h3::before {
-            background: #10b981;
-        }
-
-        html[data-theme="dark"] .cloud-preset-btn {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            color: #cbd5e1;
-        }
-
-        html[data-theme="dark"] .cloud-preset-btn:hover {
-            background: rgba(16, 185, 129, 0.12);
-            border-color: rgba(52, 211, 153, 0.4);
-            color: #6ee7b7;
-        }
-
-        html[data-theme="dark"] .cloud-preset-btn.active {
-            background: rgba(16, 185, 129, 0.18);
-            border-color: rgba(52, 211, 153, 0.55);
-            color: #6ee7b7;
-        }
-
-        html[data-theme="dark"] .cloud-status.success {
-            background: rgba(16, 185, 129, 0.12);
-            border: 1px solid rgba(52, 211, 153, 0.35);
-            color: #6ee7b7;
-        }
-
-        html[data-theme="dark"] .cloud-status.error {
-            background: rgba(248, 113, 113, 0.12);
-            border: 1px solid rgba(248, 113, 113, 0.35);
-            color: #fca5a5;
-        }
-
-        html[data-theme="dark"] .cloud-status.info {
-            background: rgba(56, 189, 248, 0.12);
-            border: 1px solid rgba(125, 211, 252, 0.35);
-            color: #7dd3fc;
-        }
-
-        html[data-theme="dark"] .import-section {
-            background: rgba(12, 22, 44, 0.38);
-            border: 1px solid rgba(125, 211, 252, 0.28);
-        }
-
-        html[data-theme="dark"] .import-section h3 {
-            color: #7dd3fc;
-        }
-
-        html[data-theme="dark"] .import-section h3::before {
-            background: #38bdf8;
-        }
-
-        html[data-theme="dark"] .import-textarea {
-            background: rgba(4, 10, 24, 0.45);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            color: #f1f5f9;
-        }
-
-        html[data-theme="dark"] .import-textarea:focus {
-            border-color: rgba(125, 211, 252, 0.7);
-            background: rgba(4, 10, 24, 0.58);
-        }
-
-        html[data-theme="dark"] .footer {
-            background: rgba(2, 8, 22, 0.4);
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            color: #94a3b8;
-        }
-
-        html[data-theme="dark"] .footer a {
-            color: #7dd3fc;
-        }
-
-        html[data-theme="dark"] .footer a:hover {
-            color: #bae6fd;
-        }
-
-        html[data-theme="dark"] ::selection {
-            background: rgba(56, 189, 248, 0.32);
-        }
-
-        html[data-theme="dark"] ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.14);
-        }
-
-        html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.26);
-        }
-
-        /* =======================================================
-           主题切换
-           ======================================================= */
-
-        html { color-scheme: light; }
-
-        html[data-theme="dark"] { color-scheme: dark; }
-
-        .theme-toggle {
-            position: fixed;
-            top: 18px;
-            right: 18px;
-            width: 46px;
-            height: 46px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.75);
-            background: rgba(255, 255, 255, 0.55);
-            backdrop-filter: blur(16px) saturate(170%);
-            -webkit-backdrop-filter: blur(16px) saturate(170%);
-            font-size: 20px;
-            cursor: pointer;
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow:
-                0 4px 16px rgba(15, 23, 42, 0.14),
-                inset 0 1px 0 rgba(255, 255, 255, 0.95);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .theme-toggle:hover {
-            transform: scale(1.1) rotate(15deg);
-            border-color: #ffffff;
-        }
-
-        .theme-toggle:active {
-            transform: scale(0.95);
-        }
-
-        html[data-theme="dark"] .theme-toggle {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.22);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.22),
-                0 4px 16px rgba(0, 0, 0, 0.45);
-        }
-
-        .hint-amber { color: #b45309; }
-
-        html[data-theme="dark"] .hint-amber { color: #fbbf24; }
-
-        .btn-cloud { color: #059669; border-color: rgba(5, 150, 105, 0.35); }
-
-        html[data-theme="dark"] .btn-cloud { color: #34d399; border-color: rgba(52, 211, 153, 0.4); }
-
-        .btn-import { color: #2563eb; border-color: rgba(37, 99, 235, 0.35); }
-
-        html[data-theme="dark"] .btn-import { color: #7dd3fc; border-color: rgba(125, 211, 252, 0.4); }
-
-        .btn-clear { color: #dc2626; border-color: rgba(220, 38, 38, 0.35); }
-
-        html[data-theme="dark"] .btn-clear { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
-
-        /* 深色模式对比度修复 */
-
-        html[data-theme="dark"] .footer {
-            color: #cbd5e1;
-        }
-
-        html[data-theme="dark"] .footer a {
-            color: #7dd3fc;
-        }
-
-        html[data-theme="dark"] .footer a:hover {
-            color: #bae6fd;
-        }
-
-        html[data-theme="dark"] .feature h3 {
-            color: #7dd3fc;
-            text-shadow: none;
-        }
-
-        html[data-theme="dark"] .feature p {
-            color: #cbd5e1;
-        }
-
-        /* features-list 深色补充开始 */
-
-        html[data-theme="dark"] .feature {
-            background: rgba(12, 22, 44, 0.38);
-            backdrop-filter: blur(36px) saturate(180%);
-            -webkit-backdrop-filter: blur(36px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow:
-                0 10px 40px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.14),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.04);
-        }
-
-        html[data-theme="dark"] .feature:hover {
-            background: rgba(16, 30, 60, 0.45);
-            border-color: rgba(125, 211, 252, 0.4);
-        }
-
-        html[data-theme="dark"] .features-list li {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #cbd5e1;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-
-        html[data-theme="dark"] .features-list li:hover {
-            background: rgba(56, 189, 248, 0.12);
-            border-color: rgba(125, 211, 252, 0.4);
-        }
-
-
-        /* 窄屏下玻璃铺满全宽，消除两侧漏底 */
-
-        @media (max-width: 840px) {
-            body {
-                padding: 0;
-            }
-
-            .container {
-                border-radius: 0;
-                border-left: none;
-                border-right: none;
-                border-top: none;
-            }
-
-            .theme-toggle {
-                top: 12px;
-                right: 12px;
-            }
+            border: 0;
+            box-shadow: none;
+            padding: 0;
+            margin-top: 16px;
+        }
+        .tips { color: var(--text-2); font-size: 12.5px; line-height: 1.85; }
+        .tips h4 { font-size: 13px; font-weight: 650; color: var(--text); margin-bottom: 8px; }
+        .tips ul { margin-left: 18px; }
+        .tips li { margin-bottom: 5px; }
+        .tips a { color: var(--accent); text-decoration: none; }
+        .tips a:hover { text-decoration: underline; }
+        .tips details { border-top: 1px solid var(--border); padding: 10px 0 2px; }
+        .tips details:first-of-type { border-top: 0; }
+        .tips details summary {
+            cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--text);
+            list-style: none; display: flex; align-items: center; gap: 6px;
+        }
+        .tips details summary::-webkit-details-marker { display: none; }
+        .tips details summary::before { content: '＋'; color: var(--text-3); font-size: 11px; }
+        .tips details[open] summary::before { content: '－'; }
+        .tips details > *:not(summary) { margin-top: 8px; }
+        .cloud-usage-tip { margin-top: 16px; }
+
+        /* 导入 */
+        .import-textarea {
+            min-height: 170px; resize: vertical;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px; line-height: 1.7;
+        }
+
+        /* 结果 */
+        .tabs {
+            display: inline-flex; gap: 2px; padding: 3px; margin: 14px 0 12px;
+            background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
+        }
+        .tab {
+            border: 0; background: transparent; padding: 6px 13px; border-radius: 8px;
+            color: var(--text-3); font-family: inherit; font-size: 12.5px;
+            cursor: pointer; transition: all .15s ease;
+        }
+        .tab.active {
+            background: var(--surface); color: var(--text); font-weight: 600;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, .08);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .code-block {
+            border: 1px solid var(--border); border-radius: 12px;
+            overflow: hidden; background: var(--code-bg);
+        }
+        .code-block-bar {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding: 8px 12px; background: rgba(255, 255, 255, .04);
+            border-bottom: 1px solid rgba(255, 255, 255, .07);
+        }
+        .code-block-bar span {
+            font-size: 11.5px; letter-spacing: .06em;
+            text-transform: uppercase; color: #8892a4;
+        }
+        .code-block pre {
+            margin: 0; padding: 14px 16px; max-height: 420px; overflow: auto;
+            color: var(--code-text);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 12px; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+        }
+        .copy-btn {
+            height: 26px; padding: 0 10px; border-radius: 7px;
+            border: 1px solid rgba(255, 255, 255, .16);
+            background: rgba(255, 255, 255, .08); color: #cfd6e4; font-size: 11.5px;
+        }
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, .16);
+            border-color: rgba(255, 255, 255, .28); color: #fff;
+        }
+
+        /* 书签抓取 */
+        .bookmark-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 4px 0 12px; }
+        .bookmark-btn {
+            display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 17px;
+            border-radius: 999px; background: var(--accent);
+            color: #fff; font-size: 13px; font-weight: 600; text-decoration: none;
+            cursor: grab; box-shadow: 0 8px 20px -12px var(--accent);
+        }
+        .stash-info { margin-top: 12px; font-size: 12px; color: var(--text-3); }
+        .stash-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+        /* 页脚 */
+        .footer { padding: 26px 0 6px; text-align: center; font-size: 12px; color: var(--text-3); }
+        .footer a { color: var(--text-2); text-decoration: none; display: inline-flex; align-items: center; }
+        .footer a:hover { color: var(--accent); }
+
+        /* CORS 代理弹窗 */
+        .hidden { display: none !important; }
+        .cors-modal-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+            background: rgba(12, 15, 21, .48);
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+        }
+        .cors-modal {
+            width: 100%; max-width: 520px; background: var(--surface);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .45);
+            overflow: hidden; animation: modalIn .16s ease-out;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(8px) scale(.99); }
+            to { opacity: 1; transform: none; }
+        }
+        .cors-modal-header {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding: 14px 18px; border-bottom: 1px solid var(--border);
+        }
+        .cors-modal-header h3 { font-size: 14px; font-weight: 650; }
+        .cors-modal-close {
+            width: 28px; height: 28px; border: 0; border-radius: 8px;
+            background: transparent; color: var(--text-3); font-size: 14px; cursor: pointer;
+        }
+        .cors-modal-close:hover { background: var(--surface-2); color: var(--text); }
+        .cors-modal-search { padding: 12px 18px 6px; }
+        .cors-modal-body { max-height: 52vh; overflow: auto; padding: 6px 12px 14px; }
+        .cors-proxy-opt {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+            padding: 9px 11px; border-radius: 10px; border: 1px solid transparent;
+            cursor: pointer; transition: background .14s ease, border-color .14s ease;
+        }
+        .cors-proxy-opt:hover { background: var(--surface-2); }
+        .cors-proxy-opt.active { border-color: var(--accent); background: var(--accent-soft); }
+        .cors-proxy-opt-name { font-size: 13px; font-weight: 600; color: var(--text); }
+        .cors-proxy-opt-host { font-size: 11.5px; color: var(--text-3); }
+        .cors-proxy-opt-tag {
+            padding: 1px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 600;
+        }
+        .cors-proxy-opt-tag.recommended { background: var(--ok-soft); color: var(--ok); }
+        .cors-proxy-opt-tag.note { background: var(--surface-2); color: var(--text-3); border: 1px solid var(--border); }
+        .cors-proxy-opt-tag.warn { background: var(--warn-soft); color: var(--warn); }
+        .cors-proxy-custom { border-style: dashed; border-color: var(--border-strong); }
+
+        @media (max-width: 680px) {
+            body { padding: 28px 14px 20px; }
+            .site-site-fields, .account-fields, .account-login-fields, .cloud-fields { grid-template-columns: 1fr; }
+            .site-body, .cloud-section, .import-section, .result-section, .tips { padding: 16px; }
+            .header h1 { font-size: 18.5px; }
         }
     </style>
-<script>
-    // 主题切换：localStorage 记忆，两个页面共享
-    (function () {
-        var KEY = 'newapi_theme';
-        function apply(t) {
-            if (t === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            } else {
-                document.documentElement.removeAttribute('data-theme');
-            }
-            var b = document.getElementById('themeToggle');
-            if (b) { b.textContent = t === 'dark' ? '☀️' : '🌙'; }
-        }
-        apply(localStorage.getItem(KEY));
-        window.toggleTheme = function () {
-            var t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            localStorage.setItem(KEY, t);
-            apply(t);
-        };
-    })();
-</script>
 </head>
 <body>
-<button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="切换深色 / 浅色主题">🌙</button>
-    <div class="container">
-        <div class="header">
-            <div class="header-icon">🚀</div>
-            <h1>NewAPI 自动签到</h1>
-            <p>支持多账号、多站点的自动签到解决方案，每日定时执行</p>
+
+<div class="container">
+    <header class="header">
+        <div class="brand">
+            <span class="brand-mark">N</span>
+            <h1>NewAPI 配置生成器</h1>
+        </div>
+        <p>多站点、多账号签到配置，同一站点只需填写一次 URL，一键生成 NEWAPI_ACCOUNTS。</p>
+        <div class="header-badges">
+            <span class="header-badge">🔐 系统访问令牌</span>
+            <span class="header-badge">🛡️ 自动过 Turnstile</span>
+            <span class="header-badge">☁️ WebDAV 云端同步</span>
+        </div>
+    </header>
+
+    <div class="content">
+        <div id="cors-notice" class="cors-notice" style="display: none;">
+            <span class="cors-icon">⚠️</span>
+            <div>
+                <strong id="cors-notice-title">当前页面以网络协议运行，云端同步可能受 CORS 跨域限制。</strong>
+                <span id="cors-notice-tips">如遇连接失败，可启用下方「CORS 代理」。</span>
+            </div>
         </div>
 
-        <div class="content">
-            <div class="feature">
-                <h3>🎯 项目简介</h3>
-                <p>基于 HTTP 直连的 NewAPI 自动签到脚本，支持多账号、多站点配置，通过 GitHub Actions 实现每日自动签到。</p>
+        <div class="toolbar">
+            <button class="btn btn-secondary" onclick="addSite()">＋ 添加站点</button>
+            <button class="btn btn-primary" onclick="generateConfig()">生成配置</button>
+            <span class="toolbar-divider" aria-hidden="true"></span>
+            <button class="btn btn-secondary" onclick="saveToLocal()">保存到本地</button>
+            <button class="btn btn-secondary" onclick="loadFromLocal()">从本地加载</button>
+            <button class="btn btn-secondary" onclick="toggleCloudSync()">☁️ 云端同步</button>
+            <button class="btn btn-secondary" onclick="pasteImport()">粘贴板导入</button>
+            <button class="btn btn-secondary" onclick="toggleImport()">导入 JSON</button>
+            <button class="btn btn-secondary" onclick="clearLocal()">清除本地数据</button>
+        </div>
+
+        <div id="sites-container"></div>
+
+        <div id="cloud-section" class="cloud-section" style="display: none;">
+            <h3>☁️ 云端同步</h3>
+            <p>把配置存到你的 WebDAV 云盘 / NAS，GitHub Actions 可直接从云端拉取，改配置无需再推代码。</p>
+
+            <div class="cloud-presets">
+                <button class="cloud-preset-btn" onclick="applyCloudPreset('jianguoyun')" id="preset-jianguoyun">坚果云</button>
+                <button class="cloud-preset-btn" onclick="applyCloudPreset('synology')" id="preset-synology">群晖 NAS</button>
+                <button class="cloud-preset-btn" onclick="applyCloudPreset('nextcloud')" id="preset-nextcloud">NextCloud</button>
+                <button class="cloud-preset-btn" onclick="applyCloudPreset('custom')" id="preset-custom">自定义</button>
             </div>
 
-            <div class="feature">
-                <h3>✨ 核心功能</h3>
-                <ul class="features-list">
-                    <li>支持多个不同的 NewAPI 站点</li>
-                    <li>可视化配置工具，无需编写代码</li>
-                    <li>GitHub Actions 自动化执行</li>
-                    <li>详细的签到日志和统计</li>
-                    <li>错误处理和超时控制</li>
-                    <li>钉钉通知推送结果</li>
+            <div class="cloud-fields">
+                <div class="form-group">
+                    <label>WebDAV 地址 <span class="required">*</span></label>
+                    <input type="text" id="cloud-url" placeholder="https://dav.jianguoyun.com/dav/">
+                    <small>完整的 WebDAV 服务地址，配合下方文件名组成配置文件的完整路径</small>
+                </div>
+                <div class="form-group">
+                    <label>认证方式</label>
+                    <select id="cloud-auth-type">
+                        <option value="basic">Basic Auth（用户名 + 密码）</option>
+                        <option value="token">Token（访问令牌）</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="cloud-fields" id="cloud-basic-auth-fields" style="margin-top: 14px;">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="cloud-username" placeholder="坚果云：邮箱；群晖：系统用户名">
+                </div>
+                <div class="form-group">
+                    <label>密码 / 应用密码</label>
+                    <input type="password" id="cloud-password" placeholder="坚果云需使用应用专用密码">
+                    <small>坚果云请在账户设置中创建「应用密码」</small>
+                </div>
+            </div>
+
+            <div class="form-group" id="cloud-token-field" style="margin-top: 14px; display: none;">
+                <label>访问令牌</label>
+                <input type="password" id="cloud-token" placeholder="WebDAV 访问令牌">
+            </div>
+
+            <div class="cloud-path-row">
+                <div class="form-group">
+                    <label>文件名</label>
+                    <input type="text" id="cloud-filename" value="newapi-config.json" placeholder="newapi-config.json">
+                    <small>云盘上的配置文件名（JSON 格式）</small>
+                </div>
+            </div>
+
+            <div class="cors-proxy-section" id="cors-proxy-section">
+                <label class="cors-proxy-toggle">
+                    <input type="checkbox" id="cors-proxy-enabled" onchange="toggleCorsProxy()">
+                    <span>启用 CORS 代理（临时方案，不建议存放敏感数据）</span>
+                </label>
+                <div class="form-group" id="cors-proxy-field" style="display: none; margin-top: 10px;">
+                    <label>代理地址</label>
+                    <button type="button" class="cors-proxy-picker-btn" id="cors-proxy-picker-btn" onclick="openCorsProxyPicker()">
+                        <span id="cors-proxy-current-label">选择内置代理或填写自定义地址</span>
+                        <span class="cors-proxy-picker-arrow">▸</span>
+                    </button>
+                    <input type="text" id="cors-proxy-url" placeholder="或直接在此粘贴代理地址" style="display: none; margin-top: 10px;" oninput="updateCorsProxyPreview()">
+                    <small>代理地址拼在 WebDAV 地址前，实际请求为：<code id="cors-proxy-preview">代理地址 + WebDAV 地址</code></small>
+                    <div id="cors-proxy-friendly-name" class="cors-proxy-friendly-name"></div>
+                </div>
+                <div class="cors-proxy-warning" id="cors-proxy-warning" style="display: none;">
+                    ⚠️ 安全提示：CORS 代理会让账号密码经第三方服务器转发，请勿用于存放敏感数据的账号。
+                </div>
+            </div>
+
+            <div id="cloud-status" class="cloud-status"></div>
+
+            <div id="cloud-saved-config" style="display: none; margin-top: 12px; padding: 11px 13px; border-radius: 10px; background: var(--ok-soft); font-size: 12px; color: var(--text-2);">
+                已保存的云端配置：<span id="cloud-saved-url"></span> · <span id="cloud-saved-username"></span> · <span id="cloud-saved-auth"></span>
+                <button class="btn btn-danger btn-xs" style="margin-left: 8px;" onclick="clearCloudConfig()">清除</button>
+            </div>
+
+            <div class="btn-group" style="margin-top: 16px;">
+                <button class="btn btn-success btn-sm" onclick="saveToCloud()">保存到云端</button>
+                <button class="btn btn-secondary btn-sm" onclick="loadFromCloud()">从云端加载</button>
+                <button class="btn btn-secondary btn-sm" onclick="testCloudConnection()">测试连接</button>
+                <button class="btn btn-secondary btn-sm" onclick="saveCloudConfigToLocal()">保存云端配置</button>
+                <button class="btn btn-secondary btn-sm" onclick="toggleCloudSync()">收起</button>
+            </div>
+
+            <div class="tips" style="margin-top: 16px;">
+                <h4>各平台配置指南</h4>
+                <details>
+                    <summary>坚果云</summary>
+                    <ul>
+                        <li>WebDAV 地址：<code>https://dav.jianguoyun.com/dav/邮箱/</code></li>
+                        <li>密码需使用「应用密码」：账户信息 → 安全选项 → 第三方应用管理 → 添加应用密码</li>
+                        <li><a href="https://help.jianguoyun.com/?tag=webdav" target="_blank">官方文档 ↗</a></li>
+                    </ul>
+                </details>
+                <details>
+                    <summary>群晖 NAS</summary>
+                    <ul>
+                        <li>套件中心安装 WebDAV Server，启用 HTTP / HTTPS</li>
+                        <li>HTTPS 端口 5006，HTTP 端口 5005，地址格式 <code>https://NAS域名:5006/webdav/</code></li>
+                        <li><a href="https://kb.synology.cn/zh-cn/DSM/tutorial/How_to_access_files_on_Synology_NAS_with_WebDAV" target="_blank">官方文档 ↗</a></li>
+                    </ul>
+                </details>
+                <details>
+                    <summary>NextCloud</summary>
+                    <ul>
+                        <li>WebDAV 地址：<code>https://域名/remote.php/dav/files/用户名/</code></li>
+                        <li>启用 2FA 时需在个人安全设置中创建应用密码</li>
+                        <li><a href="https://docs.nextcloud.com/server/latest/user_manual/en/files/access_webdav.html" target="_blank">官方文档 ↗</a></li>
+                    </ul>
+                </details>
+                <details>
+                    <summary>GitHub Actions 接入</summary>
+                    <ul>
+                        <li>保存到云端后，把 <code>CONFIG_URL</code> 与 <code>CONFIG_AUTH</code> 加入仓库 Settings → Secrets</li>
+                        <li>签到脚本优先从云端拉取配置，失败时回退到 <code>NEWAPI_ACCOUNTS</code></li>
+                    </ul>
+                </details>
+                <details>
+                    <summary>CORS 跨域限制怎么办</summary>
+                    <ul>
+                        <li>浏览器直接打开本文件（<code>file://</code>）时受限最小，推荐优先这样用</li>
+                        <li>群晖 / NextCloud 可在服务端添加 <code>Access-Control-Allow-Origin</code> 响应头</li>
+                        <li>坚果云不支持自定义 CORS，可临时启用上方「CORS 代理」</li>
+                        <li>⚠️ 代理意味着账号密码会经第三方转发，请勿用于敏感账号</li>
+                    </ul>
+                </details>
+            </div>
+        </div>
+
+        <div id="import-section" class="import-section" style="display: none;">
+            <h3>导入 JSON 配置</h3>
+            <p>粘贴已有的 JSON 配置，按站点自动分组回填表单。</p>
+            <textarea id="import-json" class="import-textarea" placeholder='粘贴 JSON 配置，例如：
+[
+  {
+    "url": "https://api.example.com",
+    "session": "MTc2NzQxMzYzM3...",
+    "access_token": "系统访问令牌(可选，推荐)",
+    "user_id": "123",
+    "name": "主力站",
+    "cf_clearance": "xxsCgaPMM..."
+  }
+]'></textarea>
+            <div class="btn-group" style="margin-top: 12px;">
+                <button class="btn btn-primary btn-sm" onclick="importJSON()">确认导入</button>
+                <button class="btn btn-secondary btn-sm" onclick="toggleImport()">取消</button>
+            </div>
+        </div>
+
+        <div class="tips" style="margin-top: 14px;">
+            <h4>使用提示</h4>
+            <ul>
+                <li><strong>站点分组：</strong>同一站点的 URL 与 CF Clearance 只填一次，站点下可添加多个账号</li>
+                <li><strong>账号信息：</strong>每个账号填写 Session 或系统访问令牌（推荐令牌）、用户 ID 和备注；令牌在站点「个人设置」中生成，不依赖 Session 且支持 Turnstile 站点</li>
+                <li><strong>保存到本地：</strong>配置存于浏览器本地存储，下次打开自动提示恢复</li>
+                <li><strong>明文存储：</strong>数据以明文保存在浏览器中，请注意使用环境安全</li>
+            </ul>
+        </div>
+
+        <div id="bookmark-section" class="cloud-section">
+            <h3>🧷 站点一键抓取书签</h3>
+            <p>把下面这个书签拖到收藏夹。在任意已登录的 NewAPI 站点点击它，即可自动抓取站点地址、用户 ID 和系统访问令牌，并回填到本页。</p>
+            <div class="bookmark-row">
+                <a id="bookmarklet-link" class="bookmark-btn" href="#" onclick="return false;" title="把我拖到浏览器收藏夹">🧷 抓取签到配置</a>
+                <button class="btn btn-secondary btn-sm" onclick="copyBookmarklet()">复制书签代码</button>
+            </div>
+            <small>
+                ① 把按钮拖到收藏夹栏，或点「复制书签代码」后手动新建书签；<br>
+                ② 打开任意已登录的 NewAPI 站点，点击该书签；<br>
+                ③ 确认后自动回填本页，支持连续抓取多个站点并累计暂存。<br>
+                ⚠️ 每次抓取都会重新生成该站点的系统访问令牌，旧令牌随即失效。
+            </small>
+            <div id="bm-stash-info" class="stash-info">📭 暂存区为空</div>
+            <div class="stash-actions">
+                <button class="btn btn-secondary btn-sm" id="bm-refill-btn" style="display: none;" onclick="refillBookmarkStash()">回填暂存站点</button>
+                <button class="btn btn-secondary btn-sm" id="bm-clear-btn" style="display: none;" onclick="clearBookmarkStash()">清空暂存</button>
+            </div>
+        </div>
+
+        <div id="result" class="result-section" style="display: none;">
+            <h3>生成的配置</h3>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('json')">JSON 格式（推荐）</button>
+                <button class="tab" onclick="switchTab('simple')">简单格式</button>
+            </div>
+
+            <div id="json-tab" class="tab-content active">
+                <div class="code-block">
+                    <div class="code-block-bar">
+                        <span>NEWAPI_ACCOUNTS · JSON</span>
+                        <button class="btn copy-btn" onclick="copyToClipboard('json')">复制</button>
+                    </div>
+                    <pre id="json-output"></pre>
+                </div>
+            </div>
+
+            <div id="simple-tab" class="tab-content">
+                <div class="code-block">
+                    <div class="code-block-bar">
+                        <span>NEWAPI_ACCOUNTS · 简单格式</span>
+                        <button class="btn copy-btn" onclick="copyToClipboard('simple')">复制</button>
+                    </div>
+                    <pre id="simple-output"></pre>
+                </div>
+            </div>
+
+            <div class="tips" style="margin-top: 16px;">
+                <h4>使用方法</h4>
+                <ul>
+                    <li><strong>GitHub Actions：</strong>复制配置，在仓库 Settings → Secrets → New repository secret 新建名为 <code>NEWAPI_ACCOUNTS</code> 的 Secret</li>
+                    <li><strong>本地运行：</strong>把配置设置为环境变量 <code>NEWAPI_ACCOUNTS</code></li>
+                    <li><strong>格式推荐：</strong>JSON 格式可带备注，便于管理多站点多账号</li>
                 </ul>
             </div>
-
-            <div class="btn-container">
-                <a href="config_generator.html" class="btn">🛠️ 打开配置生成器</a>
-                <a href="https://github.com/Jasonliu-0/Newapi-checkin" class="btn btn-secondary" target="_blank">📖 查看完整文档</a>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>Made with ❤️ by <a href="https://github.com/Jasonliu-0/Newapi-checkin" target="_blank" style="display: inline-flex; align-items: center;"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" style="vertical-align: -2px; margin-right: 4px;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53 .63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Jasonliu-0</a></p>
         </div>
     </div>
-<script>
-        // ===== 3D Card Tilt Effect =====
-        const tiltCards = document.querySelectorAll('.feature');
-        const tiltBtns = document.querySelectorAll('.btn');
 
-        tiltCards.forEach(card => {
+    <div class="footer">
+        <p>基于 <a href="https://github.com/Jasonliu-0/Newapi-checkin" target="_blank"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" style="margin-right: 4px;"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Jasonliu-0/Newapi-checkin</a> 二次开发</p>
+    </div>
+</div>
+
+<script>
+        let siteCount = 0;
+        const siteAccountCounts = {};
+
+        window.onload = function() {
+            addSite();
+        };
+
+        function addSite() {
+            siteCount++;
+            siteAccountCounts[siteCount] = 0;
+            const container = document.getElementById('sites-container');
+
+            const siteCard = document.createElement('div');
+            siteCard.className = 'site-card';
+            siteCard.id = `site-${siteCount}`;
+            siteCard.innerHTML = `
+                <div class="site-header">
+                    <span class="site-title">站点 ${siteCount}</span>
+                    <div class="site-actions">
+                        ${siteCount > 1 ? `<button class="btn btn-danger btn-xs" onclick="removeSite(${siteCount})">删除站点</button>` : ''}
+                    </div>
+                </div>
+                <div class="site-body">
+                    <div class="site-site-fields">
+                        <div class="form-group">
+                            <label>站点 URL <span class="required">*</span></label>
+                            <div class="url-input-wrapper">
+                                <input type="text" id="site-url-${siteCount}" placeholder="https://api.example.com">
+                                <button class="url-jump-btn" onclick="jumpToUrl(${siteCount})" title="跳转到该站点">↗</button>
+                            </div>
+                            <small>完整的站点地址，同站点下所有账号共享此 URL</small>
+                        </div>
+                        <div class="form-group">
+                            <label>CF Clearance（可选）</label>
+                            <input type="text" id="site-cfclearance-${siteCount}" placeholder="xxsCgaPMM...">
+                            <small>站点级 Cloudflare 防护 Cookie，同站点共享</small>
+                        </div>
+                    </div>
+
+                    <hr class="accounts-divider">
+
+                    <div class="accounts-label">账号列表</div>
+                    <div id="site-accounts-${siteCount}"></div>
+
+                    <div class="add-account-row">
+                        <button class="btn btn-primary btn-sm" onclick="addAccountToSite(${siteCount})">➕ 添加账号</button>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(siteCard);
+            addAccountToSite(siteCount);
+        }
+
+        function addAccountToSite(siteId) {
+            siteAccountCounts[siteId]++;
+            const accIdx = siteAccountCounts[siteId];
+            const accountsContainer = document.getElementById(`site-accounts-${siteId}`);
+
+            const accItem = document.createElement('div');
+            accItem.className = 'account-item';
+            accItem.id = `acc-${siteId}-${accIdx}`;
+            accItem.innerHTML = `
+                <div class="account-item-header">
+                    <span class="account-item-title">账号 ${accIdx}</span>
+                    ${accIdx > 1 ? `<button class="btn btn-danger btn-xs" onclick="removeAccountFromSite(${siteId}, ${accIdx})">删除</button>` : ''}
+                </div>
+                <div class="account-fields">
+                    <div class="form-group">
+                        <label>Session <span class="label-hint">(与令牌二选一)</span></label>
+                        <input type="text" id="acc-session-${siteId}-${accIdx}" placeholder="MTc2NzQxMzYzM3...">
+                    </div>
+                    <div class="form-group">
+                        <label>系统访问令牌 <span class="label-hint">(可选，推荐)</span></label>
+                        <input type="text" id="acc-access-token-${siteId}-${accIdx}" placeholder="粘贴系统访问令牌，如 Y13BF+k/... ">
+                        <small class="hint-amber">获取方式：登录站点 → 右上角头像 → 个人设置 → 系统访问令牌 → 生成并复制</small>
+                    </div>
+                    <div class="form-group">
+                        <label>用户ID <span class="required">*</span></label>
+                        <input type="text" id="acc-userid-${siteId}-${accIdx}" placeholder="123">
+                    </div>
+                    <div class="form-group">
+                        <label>备注名称</label>
+                        <input type="text" id="acc-name-${siteId}-${accIdx}" placeholder="主力站 / 备用站">
+                    </div>
+                </div>
+                <div class="account-login-fields" style="margin-top: 10px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>登录账号（可选）</label>
+                        <input type="text" id="acc-login-user-${siteId}-${accIdx}" placeholder="session失效时用于重新获取">
+                        <small class="hint-amber">session过期时自动登录</small>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>登录密码（可选）</label>
+                        <input type="password" id="acc-login-pass-${siteId}-${accIdx}" placeholder="留空则不尝试自动登录">
+                        <small class="hint-amber">如果没填，session失效直接报错</small>
+                    </div>
+                </div>
+            `;
+
+            accountsContainer.appendChild(accItem);
+        }
+
+        function removeAccountFromSite(siteId, accIdx) {
+            const el = document.getElementById(`acc-${siteId}-${accIdx}`);
+            if (el) {
+                el.style.transition = 'all 0.3s ease';
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-10px)';
+                setTimeout(() => el.remove(), 300);
+            }
+        }
+
+        function removeSite(siteId) {
+            const el = document.getElementById(`site-${siteId}`);
+            if (el) {
+                el.style.transition = 'all 0.3s ease';
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-10px)';
+                setTimeout(() => el.remove(), 300);
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            if (tab === 'json') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('json-tab').classList.add('active');
+            } else {
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('simple-tab').classList.add('active');
+            }
+        }
+
+        // ─── 站点一键抓取书签 ─────────────────────────────────────
+
+        const BOOKMARKLET_SRC = [
+            "(function(){",
+            "var origin=location.origin;",
+            "var uid=null;",
+            "try{var u=JSON.parse(localStorage.getItem('user')||'null');if(u&&u.id)uid=u.id;}catch(e){}",
+            "var go=function(cfg){",
+            "try{navigator.clipboard.writeText(cfg);}catch(e){}",
+            "if(confirm('已抓取站点配置，点击确定打开本地配置页面并自动回填：')){",
+            "window.open('" + location.origin + location.pathname + "#bm='+encodeURIComponent(cfg),'_blank');",
+            "}",
+            "};",
+            "fetch(origin+'/api/user/self',{credentials:'include'})",
+            ".then(function(r){return r.json();})",
+            ".then(function(self){",
+            "if(self&&self.success&&self.data&&self.data.id){uid=self.data.id;}",
+            "return fetch(origin+'/api/user/token',{credentials:'include'}).then(function(r){return r.json();});",
+            "})",
+            ".then(function(tok){",
+            "var token=(tok&&tok.success&&tok.data)?tok.data:'';",
+            "var cfg=JSON.stringify([{url:origin,session:'',access_token:token,user_id:String(uid||''),name:location.hostname}]);",
+            "go(cfg);",
+            "})",
+            ".catch(function(e){alert('抓取失败: '+(e.message||e));});",
+            "})();"
+        ].join(' ');
+
+        function buildBookmarkletHref() {
+            return 'javascript:' + encodeURIComponent(BOOKMARKLET_SRC);
+        }
+
+        function copyBookmarklet() {
+            const code = decodeURIComponent(buildBookmarkletHref().replace(/^javascript:/, ''));
+            navigator.clipboard.writeText('javascript:' + code).then(() => {
+                showCloudStatus('success', '✅ 书签代码已复制：新建一个收藏夹书签，名称随意，网址粘贴这段代码');
+            }).catch(() => {
+                showCloudStatus('error', '❌ 复制失败，请手动展开下方代码复制');
+            });
+        }
+
+        function importFromData(accounts, sourceName) {
+            if (!Array.isArray(accounts) || !accounts.length) {
+                alert('⚠️ ' + sourceName + ' 中没有有效的账号数据');
+                return;
+            }
+            for (let i = 0; i < accounts.length; i++) {
+                const acc = accounts[i];
+                if (!acc.url || (!acc.session && !acc.access_token)) {
+                    alert(`⚠️ 第 ${i + 1} 个账号缺少 url，且 session 与 access_token 至少需要一个`);
+                    return;
+                }
+            }
+            loadFlatData(accounts);
+            saveToLocal();
+            alert(`✅ 已从${sourceName}回填 ${accounts.length} 个账号（表单已自动保存到本地）`);
+        }
+
+        function pasteImport() {
+            navigator.clipboard.readText().then(text => {
+                if (!text.trim()) { alert('⚠️ 剪贴板是空的'); return; }
+                try {
+                    importFromData(JSON.parse(text), '剪贴板');
+                } catch (e) {
+                    alert('❌ 剪贴板内容不是有效的 JSON：' + e.message);
+                }
+            }).catch(e => {
+                alert('❌ 无法读取剪贴板（浏览器可能未授权）：' + e.message + '\n可改用「📋 导入 JSON」手动粘贴');
+            });
+        }
+
+        // 书签回填：#bm=<URL编码的账号JSON>
+        // 多站点暂存：每次抓取按 url 合并进 localStorage 暂存区，
+        // 表单回填全部暂存站点——可以连续去多个站点点书签再一起保存
+        const BM_STASH_KEY = 'newapi_bm_stash';
+
+        function loadBookmarkStash() {
+            try { return JSON.parse(localStorage.getItem(BM_STASH_KEY) || '[]'); }
+            catch (e) { return []; }
+        }
+
+        function saveBookmarkStash(stash) {
+            localStorage.setItem(BM_STASH_KEY, JSON.stringify(stash.slice(-12)));
+        }
+
+        function updateBookmarkStashUI() {
+            const stash = loadBookmarkStash();
+            const info = document.getElementById('bm-stash-info');
+            if (!info) return;
+            if (!stash.length) {
+                info.innerHTML = '📭 暂存区为空：去任意已登录的 NewAPI 站点点击书签即可抓取';
+                document.getElementById('bm-refill-btn').style.display = 'none';
+                document.getElementById('bm-clear-btn').style.display = 'none';
+            } else {
+                const names = stash.map(a => a.name || a.url.replace(/^https?:\/\//, '')).join('、');
+                info.innerHTML = `📦 暂存 <strong>${stash.length}</strong> 个站点：${names}`;
+                document.getElementById('bm-refill-btn').style.display = '';
+                document.getElementById('bm-clear-btn').style.display = '';
+            }
+        }
+
+        function refillBookmarkStash() {
+            const stash = loadBookmarkStash();
+            if (!stash.length) { alert('📭 暂存区为空：先去站点上点书签抓取'); return; }
+            importFromData(stash, '抓取暂存');
+        }
+
+        function clearBookmarkStash() {
+            if (!confirm('确定清空抓取暂存？不影响已保存的配置')) return;
+            localStorage.removeItem(BM_STASH_KEY);
+            updateBookmarkStashUI();
+        }
+
+        (function handleBookmarkHash() {
+            const m = (location.hash || '').match(/^#bm=(.+)$/);
+            if (!m) { updateBookmarkStashUI(); return; }
+            let stash = loadBookmarkStash();
+            try {
+                const fresh = JSON.parse(decodeURIComponent(m[1]));
+                let added = 0, updated = 0;
+                fresh.forEach(acc => {
+                    if (!acc.url) return;
+                    const i = stash.findIndex(x => x.url === acc.url);
+                    if (i >= 0) { stash[i] = acc; updated++; } else { stash.push(acc); added++; }
+                });
+                localStorage.setItem(BM_STASH_KEY, JSON.stringify(stash.slice(-12)));
+                loadFlatData(stash);
+                saveToLocal();
+                updateBookmarkStashUI();
+                alert(`🧷 书签抓取完成：新增 ${added} 个、更新 ${updated} 个站点，暂存共 ${stash.length} 个已全部回填表单`);
+            } catch (e) {
+                alert('❌ 书签数据解析失败：' + e.message);
+            } finally {
+                history.replaceState(null, '', location.pathname);
+            }
+        })();
+
+        // 初始化书签链接
+        (function initBookmarklet() {
+            const link = document.getElementById('bookmarklet-link');
+            if (link) link.href = buildBookmarkletHref();
+        })();
+
+        // ─── 站点防护探测 ─────────────────────────────────────
+
+        function probeSiteProtection(siteId) {
+            const urlInput = document.getElementById(`site-url-${siteId}`);
+            const card = document.getElementById(`site-${siteId}`);
+            if (!urlInput || !card) return;
+            const raw = urlInput.value.trim();
+            if (!raw) return;
+            const full = raw.startsWith('http') ? raw : 'https://' + raw;
+
+            let box = card.querySelector('.protect-probe');
+            if (!box) {
+                box = document.createElement('div');
+                box.className = 'protect-probe';
+                const body = card.querySelector('.site-body') || card;
+                body.appendChild(box);
+            }
+            box.style.display = 'block';
+            box.innerHTML = '🔍 正在探测站点防护（/api/status）...';
+
+            cloudFetch(full + '/api/status', {method: 'GET'})
+                .then(async r => {
+                    const text = await r.text();
+                    let data;
+                    try {
+                        data = JSON.parse(text).data || {};
+                        if (!Object.keys(data).length) throw new Error('空数据');
+                    } catch (e) {
+                        throw new Error('响应异常（可能被 CF 拦截或地址不可达）');
+                    }
+                    const chips = ['浏览器可达 ✅'];
+                    chips.push(data.turnstile_check ? 'Turnstile ✅' : 'Turnstile ❌');
+                    if (data.pow_enabled) chips.push(`PoW ✅ (模式: ${data.pow_mode || 'replace'})`);
+                    if (data.pow_enabled && data.turnstile_check && data.pow_mode === 'replace') {
+                        chips.push('→ PoW 替代 Turnstile');
+                    }
+                    if (data.checkin_enabled === false) chips.push('⚠️ 签到功能未开启');
+                    box.innerHTML = '🛡️ 该站防护: ' + chips.map(s => `<span class="protect-chip">${s}</span>`).join(' ');
+                })
+                .catch(e => {
+                    box.innerHTML = `🛡️ 探测失败: ${e.message}（受 CORS 限制，可改用本地代理或 CORS 代理）`;
+                });
+        }
+
+        // 站点 URL 填写/修改后自动探测
+        document.addEventListener('change', function (e) {
+            if (e.target && /^site-url-\d+$/.test(e.target.id || '')) {
+                probeSiteProtection(e.target.id.split('-')[2]);
+            }
+        });
+
+        function generateConfig() {
+            const accounts = [];
+            const siteCards = document.querySelectorAll('.site-card');
+            let hasError = false;
+
+            siteCards.forEach(card => {
+                if (hasError) return;
+                const siteId = card.id.split('-')[1];
+                const url = document.getElementById(`site-url-${siteId}`).value.trim();
+                const cfClearance = document.getElementById(`site-cfclearance-${siteId}`).value.trim();
+
+                if (!url) {
+                    alert(`站点 ${siteId}: URL 不能为空`);
+                    hasError = true;
+                    return;
+                }
+
+                const fullUrl = url.startsWith('http') ? url : 'https://' + url;
+
+                const accItems = card.querySelectorAll('.account-item');
+                if (accItems.length === 0) {
+                    alert(`站点 ${siteId}: 至少需要添加一个账号`);
+                    hasError = true;
+                    return;
+                }
+
+                accItems.forEach(item => {
+                    if (hasError) return;
+                    const parts = item.id.split('-');
+                    const sId = parts[1];
+                    const aId = parts[2];
+                    const session = document.getElementById(`acc-session-${sId}-${aId}`).value.trim();
+                    const accessToken = document.getElementById(`acc-access-token-${sId}-${aId}`)?.value.trim() || '';
+                    const userId = document.getElementById(`acc-userid-${sId}-${aId}`).value.trim();
+                    const name = document.getElementById(`acc-name-${sId}-${aId}`).value.trim();
+                    const loginUser = document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '';
+                    const loginPass = document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || '';
+
+                    if ((!session && !accessToken) || !userId) {
+                        alert(`站点 ${siteId} 账号 ${aId}: Session 与 系统访问令牌 至少填一个，用户ID 不能为空`);
+                        hasError = true;
+                        return;
+                    }
+
+                    const account = {
+                        url: fullUrl,
+                        session: session,
+                        user_id: userId,
+                        name: name || `站点${siteId}-账号${aId}`
+                    };
+
+                    if (accessToken) {
+                        account.access_token = accessToken;
+                    }
+
+                    if (cfClearance) {
+                        account.cf_clearance = cfClearance;
+                    }
+
+                    if (loginUser) {
+                        account.login_username = loginUser;
+                    }
+                    if (loginPass) {
+                        account.login_password = loginPass;
+                    }
+
+                    accounts.push(account);
+                });
+            });
+
+            if (hasError || accounts.length === 0) return;
+
+            document.getElementById('json-output').textContent = JSON.stringify(accounts, null, 2);
+            document.getElementById('simple-output').textContent = accounts.map(acc => `${acc.url}#${acc.session}${acc.access_token ? '#' + acc.access_token : ''}`).join(',');
+
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyToClipboard(format) {
+            const text = format === 'json'
+                ? document.getElementById('json-output').textContent
+                : document.getElementById('simple-output').textContent;
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    btn.textContent = '✅ 已复制！';
+                    btn.style.background = 'rgba(5, 150, 105, 0.12)';
+                    btn.style.borderColor = 'rgba(5, 150, 105, 0.35)';
+                    btn.style.color = '#059669';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.background = '';
+                        btn.style.borderColor = '';
+                        btn.style.color = '';
+                    }, 2000);
+                }).catch(() => fallbackCopy(text, btn, originalText));
+            } else {
+                fallbackCopy(text, btn, originalText);
+            }
+        }
+
+        function fallbackCopy(text, btn, originalText) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.top = '-9999px';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+
+            try {
+                textarea.select();
+                textarea.setSelectionRange(0, 99999);
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                if (successful) {
+                    btn.textContent = '✅ 已复制！';
+                    btn.style.background = 'rgba(5, 150, 105, 0.12)';
+                    btn.style.color = '#059669';
+                    setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.style.color = ''; }, 2000);
+                } else {
+                    throw new Error('execCommand failed');
+                }
+            } catch (err) {
+                document.body.removeChild(textarea);
+                const outputElement = document.getElementById(btn.closest('.tab-content').querySelector('pre').id);
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(outputElement);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                btn.textContent = '⚠️ 请手动复制';
+                btn.style.background = 'rgba(245, 158, 11, 0.14)';
+                btn.style.color = '#b45309';
+                alert('自动复制失败，已为您选中文本，请按 Ctrl+C 手动复制');
+                setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; btn.style.color = ''; }, 3000);
+            }
+        }
+
+        const STORAGE_KEY = 'newapi_checkin_accounts';
+
+        window.addEventListener('load', checkLocalStorage);
+
+        function checkLocalStorage() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                const notice = document.createElement('div');
+                notice.className = 'notice';
+                notice.innerHTML = `<span>💡</span><span>发现本地保存的配置，点击"从本地加载"按钮可恢复。</span>`;
+                document.querySelector('.content').insertBefore(notice, document.querySelector('.content').firstChild);
+            }
+        }
+
+        function collectFormData() {
+            const sites = [];
+            document.querySelectorAll('.site-card').forEach(card => {
+                const siteId = card.id.split('-')[1];
+                const url = document.getElementById(`site-url-${siteId}`).value.trim();
+                const cfClearance = document.getElementById(`site-cfclearance-${siteId}`).value.trim();
+
+                const accs = [];
+                card.querySelectorAll('.account-item').forEach(item => {
+                    const parts = item.id.split('-');
+                    const sId = parts[1];
+                    const aId = parts[2];
+                    accs.push({
+                        session: document.getElementById(`acc-session-${sId}-${aId}`).value.trim(),
+                        accessToken: document.getElementById(`acc-access-token-${sId}-${aId}`)?.value.trim() || '',
+                        userId: document.getElementById(`acc-userid-${sId}-${aId}`).value.trim(),
+                        name: document.getElementById(`acc-name-${sId}-${aId}`).value.trim(),
+                        loginUser: document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '',
+                        loginPass: document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || ''
+                    });
+                });
+
+                if (url || cfClearance || accs.some(a => a.session || a.accessToken || a.userId || a.name)) {
+                    sites.push({ url, cfClearance, accounts: accs });
+                }
+            });
+            return sites;
+        }
+
+        function saveToLocal() {
+            const sites = collectFormData();
+            if (sites.length === 0) { alert('⚠️ 没有可保存的配置'); return; }
+
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(sites));
+                alert(`✅ 成功保存 ${sites.length} 个站点配置到本地！\n\n⚠️ 提示：Session Cookie 以明文形式存储，请注意安全。`);
+            } catch (e) { alert('❌ 保存失败：' + e.message); }
+        }
+
+        function loadFromLocal() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (!savedData) { alert('⚠️ 没有找到本地保存的配置'); return; }
+
+            try {
+                const data = JSON.parse(savedData);
+                if (Array.isArray(data) && data.length > 0 && data[0].accounts) {
+                    loadGroupedData(data);
+                } else if (Array.isArray(data) && data.length > 0) {
+                    loadFlatData(data);
+                } else {
+                    alert('⚠️ 本地配置格式错误');
+                    return;
+                }
+                alert(`✅ 成功加载 ${document.querySelectorAll('.account-item').length} 个账号配置！`);
+            } catch (e) { alert('❌ 加载失败：' + e.message); }
+        }
+
+        function loadGroupedData(sites) {
+            document.getElementById('sites-container').innerHTML = '';
+            siteCount = 0;
+
+            sites.forEach(site => {
+                addSite();
+                const sid = siteCount;
+                document.getElementById(`site-url-${sid}`).value = site.url || '';
+                document.getElementById(`site-cfclearance-${sid}`).value = site.cfClearance || '';
+
+                if (site.accounts && site.accounts.length > 0) {
+                    site.accounts.forEach((acc, i) => {
+                        if (i > 0) addAccountToSite(sid);
+                        const aid = siteAccountCounts[sid];
+                        document.getElementById(`acc-session-${sid}-${aid}`).value = acc.session || '';
+                        const accessTokenEl = document.getElementById(`acc-access-token-${sid}-${aid}`);
+                        if (accessTokenEl) accessTokenEl.value = acc.accessToken || acc.access_token || '';
+                        document.getElementById(`acc-userid-${sid}-${aid}`).value = acc.userId || '';
+                        document.getElementById(`acc-name-${sid}-${aid}`).value = acc.name || '';
+                        const loginUserEl = document.getElementById(`acc-login-user-${sid}-${aid}`);
+                        const loginPassEl = document.getElementById(`acc-login-pass-${sid}-${aid}`);
+                        if (loginUserEl) loginUserEl.value = acc.loginUser || '';
+                        if (loginPassEl) loginPassEl.value = acc.loginPass || '';
+                    });
+                }
+            });
+        }
+
+        function loadFlatData(flatAccounts) {
+            const grouped = {};
+            flatAccounts.forEach(acc => {
+                const key = (acc.url || '') + '|' + (acc.cfClearance || acc.cf_clearance || '');
+                if (!grouped[key]) {
+                    grouped[key] = { url: acc.url || '', cfClearance: acc.cfClearance || acc.cf_clearance || '', accounts: [] };
+                }
+                grouped[key].accounts.push({
+                    session: acc.session || '',
+                    accessToken: acc.accessToken || acc.access_token || '',
+                    userId: acc.userId || acc.user_id || '',
+                    name: acc.name || '',
+                    loginUser: acc.loginUser || acc.login_username || '',
+                    loginPass: acc.loginPass || acc.login_password || ''
+                });
+            });
+            loadGroupedData(Object.values(grouped));
+        }
+
+        function toggleImport() {
+            const section = document.getElementById('import-section');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                document.getElementById('import-json').focus();
+            } else {
+                section.style.display = 'none';
+                document.getElementById('import-json').value = '';
+            }
+        }
+
+        function importJSON() {
+            const raw = document.getElementById('import-json').value.trim();
+            if (!raw) { alert('⚠️ 请先粘贴 JSON 配置'); return; }
+
+            try {
+                const accounts = JSON.parse(raw);
+                if (!Array.isArray(accounts) || accounts.length === 0) {
+                    alert('⚠️ JSON 格式错误：应为账号数组（[]）');
+                    return;
+                }
+
+                for (let i = 0; i < accounts.length; i++) {
+                    const acc = accounts[i];
+                    if (!acc.url || (!acc.session && !acc.access_token)) {
+                        alert(`⚠️ 第 ${i + 1} 个账号缺少 url，且 session 与 access_token 至少需要一个`);
+                        return;
+                    }
+                }
+
+                loadFlatData(accounts);
+                toggleImport();
+                alert(`✅ 成功导入 ${document.querySelectorAll('.account-item').length} 个账号配置！已按站点自动分组。`);
+            } catch (e) {
+                alert('❌ JSON 解析失败：' + e.message + '\n\n请检查格式是否正确');
+            }
+        }
+
+        function jumpToUrl(siteId) {
+            const urlInput = document.getElementById(`site-url-${siteId}`);
+            const url = urlInput.value.trim();
+            if (!url) { alert('⚠️ 请先填写站点 URL'); return; }
+            const fullUrl = url.startsWith('http') ? url : 'https://' + url;
+            window.open(fullUrl, '_blank');
+        }
+
+        function clearLocal() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (!savedData) { alert('⚠️ 没有本地保存的配置'); return; }
+
+            if (confirm('⚠️ 确定要清除本地保存的配置吗？\n\n此操作不可恢复！')) {
+                try {
+                    localStorage.removeItem(STORAGE_KEY);
+                    alert('✅ 已清除本地配置');
+                    location.reload();
+                } catch (e) { alert('❌ 清除失败：' + e.message); }
+            }
+        }
+
+        const CLOUD_STORAGE_KEY = 'newapi_checkin_cloud_config';
+
+        function loadCloudConfigFromLocal() {
+            const saved = localStorage.getItem(CLOUD_STORAGE_KEY);
+            if (!saved) return;
+
+            try {
+                const config = JSON.parse(saved);
+                document.getElementById('cloud-url').value = config.url || '';
+                document.getElementById('cloud-auth-type').value = config.authType || 'basic';
+                document.getElementById('cloud-username').value = config.username || '';
+                document.getElementById('cloud-password').value = config.password || '';
+                document.getElementById('cloud-token').value = config.token || '';
+                document.getElementById('cloud-filename').value = config.filename || 'newapi-config.json';
+                document.getElementById('cors-proxy-enabled').checked = config.corsProxyEnabled || false;
+                document.getElementById('cors-proxy-url').value = config.corsProxyUrl || '';
+
+                if (config.authType === 'token') {
+                    document.getElementById('cloud-basic-auth-fields').style.display = 'none';
+                    document.getElementById('cloud-token-field').style.display = 'block';
+                }
+
+                if (config.corsProxyEnabled) {
+                    document.getElementById('cors-proxy-field').style.display = 'block';
+                    document.getElementById('cors-proxy-warning').style.display = 'block';
+                    document.getElementById('cors-proxy-url').style.display = 'block';
+                    if (config.corsProxyUrl) {
+                        const matched = CORS_PROXIES.find(p => p.url === config.corsProxyUrl);
+                        const label = matched ? matched.name : '自定义代理';
+                        document.getElementById('cors-proxy-friendly-name').textContent = `✅ 已选择：${label}`;
+                        document.getElementById('cors-proxy-picker-btn').innerHTML = `<span>${matched ? matched.name : '自定义代理'}</span><span class="cors-proxy-picker-arrow">▸</span>`;
+                        document.getElementById('cors-proxy-picker-btn').classList.add('selected');
+                    }
+                }
+
+                if (config.preset) {
+                    document.querySelectorAll('.cloud-preset-btn').forEach(b => b.classList.remove('active'));
+                    const presetBtn = document.getElementById(`preset-${config.preset}`);
+                    if (presetBtn) presetBtn.classList.add('active');
+                }
+
+                updateSavedConfigDisplay(config);
+                updateCorsProxyPreview();
+            } catch (e) {}
+        }
+
+        function toggleCloudSync() {
+            const section = document.getElementById('cloud-section');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                loadCloudConfigFromLocal();
+                document.getElementById('cloud-section').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        function applyCloudPreset(preset) {
+            document.querySelectorAll('.cloud-preset-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`preset-${preset}`).classList.add('active');
+
+            const urlInput = document.getElementById('cloud-url');
+            const usernameInput = document.getElementById('cloud-username');
+            const passwordInput = document.getElementById('cloud-password');
+            const filenameInput = document.getElementById('cloud-filename');
+
+            switch (preset) {
+                case 'jianguoyun':
+                    urlInput.value = 'https://dav.jianguoyun.com/dav/';
+                    usernameInput.placeholder = '坚果云注册邮箱（如 user@example.com）';
+                    passwordInput.placeholder = '应用专用密码 → 账户信息 → 安全选项 → 添加应用密码';
+                    break;
+                case 'synology':
+                    urlInput.value = 'https://NAS域名:5006/webdav/';
+                    usernameInput.placeholder = '群晖系统用户名';
+                    passwordInput.placeholder = '群晖用户密码';
+                    break;
+                case 'nextcloud':
+                    urlInput.value = 'https://域名/remote.php/dav/files/用户名/';
+                    usernameInput.placeholder = 'NextCloud 用户名';
+                    passwordInput.placeholder = 'NextCloud 密码（启用了 2FA 请用应用密码）';
+                    break;
+                case 'custom':
+                    urlInput.value = '';
+                    usernameInput.placeholder = '用户名';
+                    passwordInput.placeholder = '密码 / 令牌';
+                    break;
+            }
+            saveCloudConfigToLocal();
+        }
+
+        document.getElementById('cloud-auth-type').addEventListener('change', function() {
+            const basicFields = document.getElementById('cloud-basic-auth-fields');
+            const tokenField = document.getElementById('cloud-token-field');
+            if (this.value === 'basic') {
+                basicFields.style.display = 'grid';
+                tokenField.style.display = 'none';
+            } else {
+                basicFields.style.display = 'none';
+                tokenField.style.display = 'block';
+            }
+        });
+
+        function saveCloudConfigToLocal() {
+            const url = document.getElementById('cloud-url').value.trim();
+            const authType = document.getElementById('cloud-auth-type').value;
+            const username = document.getElementById('cloud-username').value.trim();
+            const password = document.getElementById('cloud-password').value.trim();
+            const token = document.getElementById('cloud-token').value.trim();
+            const filename = document.getElementById('cloud-filename').value.trim() || 'newapi-config.json';
+            const corsProxyEnabled = document.getElementById('cors-proxy-enabled').checked;
+            const corsProxyUrl = document.getElementById('cors-proxy-url').value.trim();
+
+            if (!url) {
+                showCloudStatus('error', '请先填写 WebDAV 地址再保存配置');
+                return;
+            }
+
+            const config = {
+                url, authType, username, password, token, filename,
+                corsProxyEnabled, corsProxyUrl,
+                preset: document.querySelector('.cloud-preset-btn.active')?.id?.replace('preset-', '') || ''
+            };
+
+            try {
+                localStorage.setItem(CLOUD_STORAGE_KEY, JSON.stringify(config));
+                showCloudStatus('success', '✅ 云端配置已保存到本地（下次打开自动恢复）');
+                updateSavedConfigDisplay(config);
+            } catch (e) {
+                showCloudStatus('error', '保存失败: ' + e.message);
+            }
+        }
+
+        function maskStr(str) {
+            if (!str || str.length <= 3) return '****';
+            return str.substring(0, 3) + '****';
+        }
+
+        function updateSavedConfigDisplay(config) {
+            const el = document.getElementById('cloud-saved-config');
+            if (!config || !config.url) {
+                el.style.display = 'none';
+                return;
+            }
+            el.style.display = 'block';
+            document.getElementById('cloud-saved-url').textContent = maskStr(config.url.replace(/^https?:\/\//, ''));
+            document.getElementById('cloud-saved-username').textContent = config.username ? maskStr(config.username) : '(无)';
+            document.getElementById('cloud-saved-auth').textContent = (config.authType === 'basic' && config.password) ? '密码: ****' : (config.authType === 'token' && config.token) ? '令牌: ****' : '(未填)';
+        }
+
+        function clearCloudConfig() {
+            localStorage.removeItem(CLOUD_STORAGE_KEY);
+            document.getElementById('cloud-saved-config').style.display = 'none';
+            showCloudStatus('info', '已清除本地保存的云端配置');
+        }
+
+        function autoSaveCloudConfig() {
+            const url = document.getElementById('cloud-url').value.trim();
+            if (!url) return;
+            const config = {
+                url,
+                authType: document.getElementById('cloud-auth-type').value,
+                username: document.getElementById('cloud-username').value.trim(),
+                password: document.getElementById('cloud-password').value.trim(),
+                token: document.getElementById('cloud-token').value.trim(),
+                filename: document.getElementById('cloud-filename').value.trim() || 'newapi-config.json',
+                corsProxyEnabled: document.getElementById('cors-proxy-enabled').checked,
+                corsProxyUrl: document.getElementById('cors-proxy-url').value.trim(),
+                preset: document.querySelector('.cloud-preset-btn.active')?.id?.replace('preset-', '') || ''
+            };
+            try {
+                localStorage.setItem(CLOUD_STORAGE_KEY, JSON.stringify(config));
+                updateSavedConfigDisplay(config);
+            } catch (e) {}
+        }
+
+        function initCloudAutoSave() {
+            ['cloud-url', 'cloud-username', 'cloud-password', 'cloud-token', 'cloud-filename', 'cors-proxy-url'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', autoSaveCloudConfig);
+            });
+            document.getElementById('cloud-auth-type').addEventListener('change', autoSaveCloudConfig);
+            document.getElementById('cors-proxy-enabled').addEventListener('change', autoSaveCloudConfig);
+        }
+
+        initCloudAutoSave();
+
+        (function detectProtocol() {
+            const protocol = window.location.protocol;
+            const noticeEl = document.getElementById('cors-notice');
+            const titleEl = document.getElementById('cors-notice-title');
+            const tipsEl = document.getElementById('cors-notice-tips');
+            const isChrome = /Chrome\//.test(navigator.userAgent) && !/Edg\//.test(navigator.userAgent);
+            const isLocal = ['127.0.0.1', 'localhost'].includes(window.location.hostname);
+
+            if (isLocal) {
+                // 本地模式：云端请求走同源代理，无 CORS 限制
+                noticeEl.className = 'notice';
+                noticeEl.querySelector('.cors-icon').textContent = '✅';
+                noticeEl.style.display = 'flex';
+                titleEl.innerHTML = '本地模式：云端同步已通过本地代理直连 WebDAV，无 CORS 限制。';
+                tipsEl.innerHTML = '直接填写 WebDAV 地址和认证信息即可同步。';
+            } else if (protocol === 'file:') {
+                if (isChrome) {
+                    noticeEl.style.display = 'flex';
+                    titleEl.textContent = 'Chrome 本地打开仍受跨域限制，无法直接请求 HTTPS 地址。';
+                    tipsEl.innerHTML = '使用本地代理服务打开本页（无 CORS 限制），或在云端同步中启用 <strong>CORS 代理</strong>，或使用 <strong>Firefox</strong> 打开本文件。';
+                } else {
+                    noticeEl.style.display = 'none';
+                }
+            } else {
+                noticeEl.style.display = 'flex';
+                titleEl.textContent = '当前页面以网络协议运行，云端同步受 CORS 跨域限制。';
+                tipsEl.innerHTML = '可 <a href="javascript:void(0)" onclick="downloadThisPage()" style="color:var(--accent);">下载到本地</a> 后用浏览器打开（file:// 方式），或在下方启用 <strong>CORS 代理</strong>。群晖/NextCloud 也可在服务端配置 CORS 头。';
+            }
+        })();
+
+        // ─── CORS Proxy Picker ─────────────────────────────────────
+
+        const CORS_PROXIES = [
+            {
+                url: 'https://api.allorigins.win/raw?url=',
+                name: 'AllOrigins',
+                host: 'api.allorigins.win',
+                note: '免费，无需申请，推荐首选',
+                tag: 'recommended',
+            },
+            {
+                url: 'https://corsproxy.io/?',
+                name: 'CORSProxy',
+                host: 'corsproxy.io',
+                note: '免费，HTTPS',
+                tag: 'recommended',
+            },
+            {
+                url: 'https://api.codetabs.com/v1/proxy?quest=',
+                name: 'CodeTabs',
+                host: 'api.codetabs.com',
+                note: '免费，首次请求可能需等待 2–3 秒',
+                tag: 'note',
+            },
+            {
+                url: 'https://thingproxy.freeboard.io/fetch/',
+                name: 'ThingProxy',
+                host: 'thingproxy.freeboard.io',
+                note: '免费，适合 JSON 接口',
+                tag: 'note',
+            },
+            {
+                url: 'https://cors-anywhere.herokuapp.com/',
+                name: 'CORS Anywhere',
+                host: 'cors-anywhere.herokuapp.com',
+                note: '需先打开其首页点击 Request temporary access 激活',
+                tag: 'warn',
+            },
+            {
+                url: 'https://api.codetabs.com/v1/proxy?quest=',
+                name: 'AllOrigins Fallback',
+                host: 'api.allorigins.win/raw',
+                note: '备用镜像',
+                tag: 'note',
+            },
+        ];
+
+        function renderCorsProxyList(filter) {
+            const q = (filter || '').toLowerCase();
+            const body = document.getElementById('cors-modal-body');
+            const currentUrl = document.getElementById('cors-proxy-url').value.trim();
+
+            body.innerHTML = CORS_PROXIES.filter(p => {
+                if (!q) return true;
+                return p.name.toLowerCase().includes(q) || p.host.toLowerCase().includes(q);
+            }).map(p => {
+                const isActive = p.url === currentUrl;
+                const tagMap = {
+                    recommended: { text: '推荐', cls: 'recommended' },
+                    note: { text: '提示', cls: 'note' },
+                    warn: { text: '注意', cls: 'warn' },
+                };
+                const tag = tagMap[p.tag] || null;
+                return `
+                    <div class="cors-proxy-opt${isActive ? ' active' : ''}" data-url="${p.url}" onclick="selectCorsProxy('${p.url}', '${p.name}')">
+                        <div class="cors-proxy-opt-name">${p.name}</div>
+                        <div class="cors-proxy-opt-host">${p.host}</div>
+                        <span class="cors-proxy-opt-tag ${tag.cls}">${tag.text}</span>
+                        <span style="font-size:12px;color:var(--text-3);margin-left:6px;">${p.note}</span>
+                        ${isActive ? '<span class="cors-proxy-opt-tag recommended" style="margin-left:8px;">✓ 当前</span>' : ''}
+                    </div>`;
+            }).join('');
+
+            // 自定义地址选项
+            body.innerHTML += `
+                <div class="cors-proxy-opt cors-proxy-custom" onclick="selectCustomProxy()">
+                    <div class="cors-proxy-opt-name">✏️ 手动输入自定义地址</div>
+                    <div class="cors-proxy-opt-custom-tip" style="font-size:12px;color:var(--text-3);margin-top:4px;">粘贴你自己的 CORS 代理或自建代理地址</div>
+                </div>`;
+        }
+
+        function openCorsProxyPicker() {
+            const overlay = document.getElementById('cors-modal-overlay');
+            overlay.classList.remove('hidden');
+            renderCorsProxyList('');
+            // focus 搜索框
+            requestAnimationFrame(() => {
+                document.getElementById('cors-modal-search').value = '';
+                document.getElementById('cors-modal-search').focus();
+            });
+            // 标记按钮为打开态
+            document.getElementById('cors-proxy-picker-btn').classList.add('open');
+        }
+
+        function closeCorsProxyPicker() {
+            document.getElementById('cors-modal-overlay').classList.add('hidden');
+            document.getElementById('cors-proxy-picker-btn').classList.remove('open');
+        }
+
+        function closeCorsProxyPickerOutside(e) {
+            if (e.target === document.getElementById('cors-modal-overlay')) {
+                closeCorsProxyPicker();
+            }
+        }
+
+        function filterCorsProxies(val) {
+            renderCorsProxyList(val);
+        }
+
+        function selectCorsProxy(url, name) {
+            document.getElementById('cors-proxy-url').value = url;
+            document.getElementById('cors-proxy-url').style.display = 'block';
+            document.getElementById('cors-proxy-friendly-name').textContent = `✅ 已选择：${name}（${url}）`;
+            closeCorsProxyPicker();
+            updateCorsProxyPreview();
+            autoSaveCloudConfig();
+        }
+
+        function selectCustomProxy() {
+            closeCorsProxyPicker();
+            const input = document.getElementById('cors-proxy-url');
+            input.style.display = 'block';
+            input.value = '';
+            input.focus();
+            document.getElementById('cors-proxy-friendly-name').textContent = '';
+            updateCorsProxyPreview();
+            autoSaveCloudConfig();
+        }
+
+        // ESC 关闭
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeCorsProxyPicker();
+        });
+
+        function toggleCorsProxy() {
+            const enabled = document.getElementById('cors-proxy-enabled').checked;
+            document.getElementById('cors-proxy-warning').style.display = enabled ? 'block' : 'none';
+            if (enabled) {
+                openCorsProxyPicker();
+            } else {
+                document.getElementById('cors-proxy-url').style.display = 'none';
+                document.getElementById('cors-proxy-url').value = '';
+                document.getElementById('cors-proxy-friendly-name').textContent = '';
+                const btn = document.getElementById('cors-proxy-picker-btn');
+                btn.innerHTML = '<span>选择内置代理或填写自定义地址</span><span class="cors-proxy-picker-arrow">▸</span>';
+                btn.classList.remove('selected');
+                updateCorsProxyPreview();
+                autoSaveCloudConfig();
+            }
+        }
+
+        // ─── 下载页面代码（恢复逻辑已移至 loadCloudConfigFromLocal）──
+
+        function downloadThisPage() {
+            const html = document.documentElement.outerHTML;
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 云端请求通道: 本地运行时通过同源代理转发到 WebDAV（彻底绕开 CORS）
+        const CLOUD_VIA_PROXY = (location.hostname === '127.0.0.1' || location.hostname === 'localhost');
+
+        async function cloudFetch(url, options = {}) {
+            if (!CLOUD_VIA_PROXY) return fetch(url, options);
+            const resp = await fetch('/cloud-proxy', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    url: url,
+                    method: options.method || 'GET',
+                    headers: options.headers || {},
+                    body: options.body || ''
+                })
+            });
+            const j = await resp.json();
+            return {
+                ok: j.status >= 200 && j.status < 300,
+                status: j.status,
+                text: async () => j.text
+            };
+        }
+
+        function buildCloudUrl() {
+            let baseUrl = document.getElementById('cloud-url').value.trim();
+            const filename = document.getElementById('cloud-filename').value.trim() || 'newapi-config.json';
+
+            if (!baseUrl) return null;
+
+            if (!baseUrl.endsWith('/')) baseUrl += '/';
+
+            const preset = document.querySelector('.cloud-preset-btn.active')?.id?.replace('preset-', '') || '';
+
+            if (preset === 'jianguoyun') {
+                const username = document.getElementById('cloud-username').value.trim();
+                if (username) {
+                    baseUrl += `${username}/${filename}`;
+                } else {
+                    baseUrl += filename;
+                }
+            } else if (preset === 'nextcloud') {
+                if (!baseUrl.includes('/files/')) {
+                    const username = document.getElementById('cloud-username').value.trim();
+                    baseUrl += `files/${username || 'USERNAME'}/${filename}`;
+                } else {
+                    if (!baseUrl.endsWith(filename)) {
+                        baseUrl = baseUrl.replace(/\/$/, '') + '/' + filename;
+                    }
+                }
+            } else {
+                baseUrl += filename;
+            }
+
+            const corsProxyEnabled = document.getElementById('cors-proxy-enabled').checked;
+            const corsProxyUrl = document.getElementById('cors-proxy-url').value.trim();
+            if (corsProxyEnabled && corsProxyUrl) {
+                const proxyBase = corsProxyUrl.endsWith('/') ? corsProxyUrl : corsProxyUrl + '/';
+                baseUrl = proxyBase + baseUrl;
+            }
+
+            return baseUrl;
+        }
+
+        function buildCloudHeaders() {
+            const authType = document.getElementById('cloud-auth-type').value;
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            if (authType === 'basic') {
+                const username = document.getElementById('cloud-username').value.trim();
+                const password = document.getElementById('cloud-password').value.trim();
+                if (!username || !password) {
+                    showCloudStatus('error', '请填写用户名和密码');
+                    return null;
+                }
+                headers['Authorization'] = 'Basic ' + btoa(username + ':' + password);
+            } else {
+                const token = document.getElementById('cloud-token').value.trim();
+                if (!token) {
+                    showCloudStatus('error', '请填写访问令牌');
+                    return null;
+                }
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+
+            return headers;
+        }
+
+        function showCloudStatus(type, message) {
+            const status = document.getElementById('cloud-status');
+            status.className = 'cloud-status ' + type;
+            status.textContent = message;
+            status.style.display = 'block';
+        }
+
+        function hideCloudStatus() {
+            const status = document.getElementById('cloud-status');
+            status.style.display = 'none';
+        }
+
+        function generateAccountsJSON() {
+            const accounts = [];
+            const siteCards = document.querySelectorAll('.site-card');
+
+            siteCards.forEach(card => {
+                const siteId = card.id.split('-')[1];
+                const url = document.getElementById(`site-url-${siteId}`).value.trim();
+                const cfClearance = document.getElementById(`site-cfclearance-${siteId}`).value.trim();
+
+                if (!url) return;
+                const fullUrl = url.startsWith('http') ? url : 'https://' + url;
+
+                const accItems = card.querySelectorAll('.account-item');
+                accItems.forEach(item => {
+                    const parts = item.id.split('-');
+                    const sId = parts[1];
+                    const aId = parts[2];
+                    const session = document.getElementById(`acc-session-${sId}-${aId}`).value.trim();
+                    const accessToken = document.getElementById(`acc-access-token-${sId}-${aId}`)?.value.trim() || '';
+                    const userId = document.getElementById(`acc-userid-${sId}-${aId}`).value.trim();
+                    const name = document.getElementById(`acc-name-${sId}-${aId}`).value.trim();
+                    const loginUser = document.getElementById(`acc-login-user-${sId}-${aId}`)?.value.trim() || '';
+                    const loginPass = document.getElementById(`acc-login-pass-${sId}-${aId}`)?.value.trim() || '';
+
+                    if (!session && !accessToken) return;
+
+                    const account = {
+                        url: fullUrl,
+                        session: session,
+                        user_id: userId,
+                        name: name || `站点${siteId}-账号${aId}`
+                    };
+
+                    if (accessToken) {
+                        account.access_token = accessToken;
+                    }
+
+                    if (cfClearance) {
+                        account.cf_clearance = cfClearance;
+                    }
+
+                    if (loginUser) {
+                        account.login_username = loginUser;
+                    }
+                    if (loginPass) {
+                        account.login_password = loginPass;
+                    }
+
+                    accounts.push(account);
+                });
+            });
+
+            return accounts;
+        }
+
+        async function saveToCloud() {
+            const url = buildCloudUrl();
+            const headers = buildCloudHeaders();
+
+            if (!url) {
+                showCloudStatus('error', '请填写 WebDAV 地址');
+                return;
+            }
+            if (!headers) return;
+
+            const accounts = generateAccountsJSON();
+            if (accounts.length === 0) {
+                showCloudStatus('error', '没有可保存的配置，请先填写账号信息');
+                return;
+            }
+
+            const dingtalk = {
+                webhook: '',
+                secret: ''
+            };
+
+            const configPayload = {
+                accounts: accounts,
+                dingtalk: dingtalk,
+                updated_at: new Date().toISOString()
+            };
+
+            showCloudStatus('info', '正在保存到云端...');
+
+            try {
+                const resp = await cloudFetch(url, {
+                    method: 'PUT',
+                    headers: headers,
+                    body: JSON.stringify(configPayload, null, 2)
+                });
+
+                if (resp.ok || resp.status === 201 || resp.status === 204) {
+                    showCloudStatus('success', `✅ 配置已保存到云端！共 ${accounts.length} 个账号`);
+                    saveCloudConfigToLocal();
+
+                    const configUrl = url;
+                    const authType = document.getElementById('cloud-auth-type').value;
+                    const username = document.getElementById('cloud-username').value.trim();
+                    const password = document.getElementById('cloud-password').value.trim();
+                    const token = document.getElementById('cloud-token').value.trim();
+                    let authStr = '';
+                    if (authType === 'basic') {
+                        authStr = `${username}:${password}`;
+                    } else {
+                        authStr = `token:${token}`;
+                    }
+
+                    generateConfig();
+                    updateCloudUsageTip(configUrl, authStr);
+                } else if (resp.status === 401) {
+                    showCloudStatus('error', '❌ 认证失败：用户名或密码不正确');
+                } else if (resp.status === 404) {
+                    showCloudStatus('error', '❌ 路径不存在：请检查 WebDAV 地址和文件路径');
+                } else if (resp.status === 403) {
+                    showCloudStatus('error', '❌ 权限不足：无法写入该路径');
+                } else {
+                    showCloudStatus('error', `❌ 保存失败：HTTP ${resp.status}`);
+                }
+            } catch (e) {
+                if (e.name === 'TypeError' && e.message.includes('Failed to fetch')) {
+                    const isChrome = /Chrome\//.test(navigator.userAgent) && !/Edg\//.test(navigator.userAgent);
+                    const protocol = window.location.protocol;
+                    let tips = '';
+                    if (protocol === 'file:' && isChrome) {
+                        tips = '\n\n💡 Chrome 不允许 file:// 向 HTTPS 发送请求，请：\n1. 启用「CORS 代理」\n2. 用 Firefox 打开本文件\n3. 检查地址和网络是否正常';
+                    } else if (protocol === 'file:') {
+                        tips = '\n\n💡 请检查：\n1. WebDAV 地址是否正确可达\n2. 网络连接是否正常\n3. HTTPS 证书是否有效';
+                    } else {
+                        tips = '\n\n💡 解决方案（按推荐顺序）：\n1. 用本地代理服务打开本页（无 CORS 限制）\n2. 启用「CORS 代理」\n3. 下载本页面后用 Firefox 打开\n4. 群晖/NextCloud 在服务端配置 CORS 头（坚果云不支持，请用方案 1）';
+                    }
+                    showCloudStatus('error', '❌ 连接失败：可能是 CORS 跨域限制或地址不可达' + tips);
+                } else {
+                    showCloudStatus('error', `❌ 保存失败：${e.message}`);
+                }
+            }
+        }
+
+        async function loadFromCloud() {
+            const url = buildCloudUrl();
+            const headers = buildCloudHeaders();
+
+            if (!url) {
+                showCloudStatus('error', '请填写 WebDAV 地址');
+                return;
+            }
+            if (!headers) return;
+
+            showCloudStatus('info', '正在从云端加载...');
+
+            try {
+                const getHeaders = { ...headers };
+                delete getHeaders['Content-Type'];
+
+                const resp = await cloudFetch(url, {
+                    method: 'GET',
+                    headers: getHeaders
+                });
+
+                if (!resp.ok) {
+                    if (resp.status === 401) {
+                        showCloudStatus('error', '❌ 认证失败：用户名或密码不正确');
+                    } else if (resp.status === 404) {
+                        showCloudStatus('error', '❌ 文件不存在：云端尚未保存配置');
+                    } else {
+                        showCloudStatus('error', `❌ 加载失败：HTTP ${resp.status}`);
+                    }
+                    return;
+                }
+
+                const text = await resp.text();
+                const data = JSON.parse(text);
+
+                let accounts;
+                if (Array.isArray(data)) {
+                    accounts = data;
+                } else if (data.accounts && Array.isArray(data.accounts)) {
+                    accounts = data.accounts;
+                } else {
+                    showCloudStatus('error', '❌ 配置格式错误：无法解析账号列表');
+                    return;
+                }
+
+                loadFlatData(accounts);
+            showCloudStatus('success', `✅ 成功从云端加载 ${accounts.length} 个账号配置！`);
+                saveCloudConfigToLocal();
+            } catch (e) {
+                if (e instanceof SyntaxError) {
+                    showCloudStatus('error', '❌ 配置文件不是有效的 JSON 格式');
+                } else if (e.name === 'TypeError' && e.message.includes('Failed to fetch')) {
+                    const protocol = window.location.protocol;
+                    let tips = '';
+                    if (protocol !== 'file:') {
+                        tips = '\n\n💡 解决方案：\n1. 用本地代理服务打开本页（无 CORS 限制）\n2. 启用「CORS 代理」\n3. 下载本页面后用 Firefox 打开\n4. 在服务端配置 CORS 允许头';
+                    } else {
+                        tips = '\n\n💡 请检查 WebDAV 地址和网络连接';
+                    }
+                    showCloudStatus('error', '❌ 网络请求失败：可能是 CORS 跨域限制或地址不可达' + tips);
+                } else {
+                    showCloudStatus('error', `❌ 加载失败：${e.message}`);
+                }
+            }
+        }
+
+        async function testCloudConnection() {
+            let url = document.getElementById('cloud-url').value.trim();
+            const headers = buildCloudHeaders();
+
+            if (!url) {
+                showCloudStatus('error', '请填写 WebDAV 地址');
+                return;
+            }
+            if (!headers) return;
+
+            if (!url.endsWith('/')) url += '/';
+
+            const corsProxyEnabled = document.getElementById('cors-proxy-enabled').checked;
+            const corsProxyUrl = document.getElementById('cors-proxy-url').value.trim();
+            if (corsProxyEnabled && corsProxyUrl) {
+                const proxyBase = corsProxyUrl.endsWith('/') ? corsProxyUrl : corsProxyUrl + '/';
+                url = proxyBase + url;
+            }
+
+            showCloudStatus('info', '正在测试连接...');
+
+            try {
+                const testHeaders = { ...headers };
+                delete testHeaders['Content-Type'];
+
+                const resp = await cloudFetch(url, {
+                    method: 'PROPFIND',
+                    headers: {
+                        ...testHeaders,
+                        'Depth': '0'
+                    }
+                });
+
+                if (resp.ok || resp.status === 207) {
+                    showCloudStatus('success', '✅ 连接成功！WebDAV 服务可正常访问');
+                } else if (resp.status === 401) {
+                    showCloudStatus('error', '❌ 连接失败：认证错误（用户名/密码不正确）');
+                } else if (resp.status === 404) {
+                    showCloudStatus('success', '⚠️ 地址可达但路径不存在（首次保存时会自动创建文件）');
+                } else {
+                    showCloudStatus('error', `❌ 连接测试返回 HTTP ${resp.status}`);
+                }
+            } catch (e) {
+                if (e.name === 'TypeError' && e.message.includes('Failed to fetch')) {
+                    const protocol = window.location.protocol;
+                    let tips = '';
+                    if (protocol !== 'file:') {
+                        tips = '\n\n💡 解决方案：\n1. 用本地代理服务打开本页（无 CORS 限制）\n2. 启用「CORS 代理」\n3. 下载本页面后用 Firefox 打开\n4. 在服务端配置 CORS 允许头';
+                    } else {
+                        tips = '\n\n💡 请检查地址和网络连接';
+                    }
+                    showCloudStatus('error', '❌ 连接失败：可能是 CORS 跨域限制或地址不可达' + tips);
+                } else {
+                    showCloudStatus('error', `❌ 连接测试失败：${e.message}`);
+                }
+            }
+        }
+
+        function updateCloudUsageTip(configUrl, authStr) {
+            const resultTips = document.querySelector('#result .tips');
+            if (!resultTips) return;
+
+            const existingCloudTip = resultTips.querySelector('.cloud-usage-tip');
+            if (existingCloudTip) existingCloudTip.remove();
+
+            const maskedAuth = maskAuthStr(authStr);
+            const maskedUrl = maskStr(configUrl.replace(/^https?:\/\//, ''));
+
+            const cloudTip = document.createElement('div');
+            cloudTip.className = 'cloud-usage-tip';
+            cloudTip.style.cssText = 'margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);';
+            cloudTip.innerHTML = `
+                <h4 style="color: var(--ok); margin-bottom: 12px;">☁️ 云端配置使用方法：</h4>
+                <ul style="margin-left: 18px; color: var(--text-2);">
+                    <li style="margin-bottom: 8px;">在 GitHub 仓库 <code>Settings → Secrets</code> 中添加：</li>
+                    <li style="margin-bottom: 8px;"><code>CONFIG_URL</code> = <span style="color:var(--ok);">${maskedUrl}...</span> <button class="btn btn-secondary btn-xs" style="padding:4px 10px;font-size:12px;" onclick="copySecretValue('config_url')">复制</button></li>
+                    <li style="margin-bottom: 8px;"><code>CONFIG_AUTH</code> = <span style="color:var(--ok);">${maskedAuth}</span> <button class="btn btn-secondary btn-xs" style="padding:4px 10px;font-size:12px;" onclick="copySecretValue('config_auth')">复制</button></li>
+                    <li style="margin-bottom: 8px;">签到脚本会优先从云端拉取配置，无需每次修改后推代码</li>
+                </ul>
+            `;
+            resultTips.appendChild(cloudTip);
+
+            window._cloudSecrets = { config_url: configUrl, config_auth: authStr };
+        }
+
+        function maskAuthStr(authStr) {
+            if (!authStr) return '****';
+            if (authStr.startsWith('token:')) {
+                const token = authStr.substring(6);
+                if (token.length <= 4) return 'token:****';
+                return 'token:' + token.substring(0, 4) + '****';
+            }
+            const colonIdx = authStr.indexOf(':');
+            if (colonIdx < 0) return '****';
+            const user = authStr.substring(0, colonIdx);
+            const pass = authStr.substring(colonIdx + 1);
+            return user + ':' + (pass.length <= 4 ? '****' : pass.substring(0, 2) + '****');
+        }
+
+        function copySecretValue(key) {
+            const value = window._cloudSecrets?.[key] || '';
+            if (!value) return;
+            const btn = event.target;
+            const orig = btn.textContent;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(value).then(() => {
+                    btn.textContent = '✅';
+                    btn.style.color = '#059669';
+                    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+                });
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = value;
+                ta.style.cssText = 'position:fixed;top:-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                btn.textContent = '✅';
+                btn.style.color = '#059669';
+                setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+            }
+        }
+    // ===== Cursor Spotlight on Site Cards =====
+        document.querySelectorAll('.site-card').forEach(card => {
             card.addEventListener('mousemove', (e) => {
                 const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-                const rotateX = (y - centerY) / 20;
-                const rotateY = (centerX - x) / 20;
-                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px) scale(1.02)`;
-            });
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = '';
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--mouse-x', x + '%');
+                card.style.setProperty('--mouse-y', y + '%');
             });
         });
 
         // ===== Magnetic Button Hover =====
-        tiltBtns.forEach(btn => {
+        document.querySelectorAll('.btn-primary, .btn-success, .btn-download').forEach(btn => {
             btn.addEventListener('mousemove', (e) => {
                 const rect = btn.getBoundingClientRect();
-                const x = e.clientX - rect.left - rect.width / 2;
-                const y = e.clientY - rect.top - rect.height / 2;
-                btn.style.transform = `translate(${x / 8}px, ${y / 8 - 3}px)`;
-                btn.style.boxShadow = `0 ${10 + y / 4}px ${40 + Math.abs(x) / 2}px rgba(37, 99, 235, 0.45)`;
+                const dx = e.clientX - rect.left - rect.width / 2;
+                const dy = e.clientY - rect.top - rect.height / 2;
+                btn.style.transform = `translate(${dx / 10}px, ${dy / 10 - 2}px)`;
             });
             btn.addEventListener('mouseleave', () => {
                 btn.style.transform = '';
-                btn.style.boxShadow = '';
             });
         });
     </script>
+
+<!-- CORS 代理选择弹窗 -->
+<div class="cors-modal-overlay hidden" id="cors-modal-overlay" onclick="closeCorsProxyPickerOutside(event)">
+    <div class="cors-modal" id="cors-modal">
+        <div class="cors-modal-header">
+            <h3>选择 CORS 代理</h3>
+            <button class="cors-modal-close" onclick="closeCorsProxyPicker()">✕</button>
+        </div>
+        <div class="cors-modal-search">
+            <input type="text" id="cors-modal-search" placeholder="搜索代理…" oninput="filterCorsProxies(this.value)" autocomplete="off">
+        </div>
+        <div class="cors-modal-body" id="cors-modal-body">
+            <!-- 由 JS 渲染 -->
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

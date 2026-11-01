@@ -2,6 +2,9 @@
 
 基于 HTTP 直连的 NewAPI 自动签到脚本，支持多账号、GitHub Actions 定时执行。
 
+> **二次开发说明**：本项目基于 [Jasonliu-0/Newapi-checkin](https://github.com/Jasonliu-0/Newapi-checkin) 二次开发，基础功能、思路与大量实现源自原作者，特此致谢。
+> 原项目地址：https://github.com/Jasonliu-0/Newapi-checkin
+
 ## ✨ 功能特性
 
 - ✅ 支持单账号/多账号签到
@@ -24,19 +27,20 @@
 - ✅ **Cloudflare 自动应对**（网络层挑战用浏览器过检，已实测 GitHub Actions 数据中心 IP 可通过）
 - ✅ **Turnstile 人机验证自动求解**（真实 Chrome 渲染组件并模拟点击，token 自动携带）
 - ✅ **PoW 工作量证明自动解算**（new-api 新版防滥用机制，SHA-256 前导零比特本地解算）
-- ✅ **液态玻璃双主题配置页**（浅色/深色一键切换，移动端自适应）
+- ✅ **简洁单页配置生成器**（index.html，无主题切换，移动端自适应）
+- ✅ **钉钉通知展示账户余额与近 30 天用量**（金额化展示，替代原始 token 数值）
 
-## 🛠️ 配置工具（推荐）
+## 🛠️ 配置工具
 
-为了让配置更简单，我们提供了两个便捷工具：
+为了让配置更简单，仓库内置了一个单页配置生成器。
 
-### 🌐 方式 1：网页配置生成器（最简单）
+### 🌐 网页配置生成器（index.html）
 
 **在线使用（推荐）：**
 
 如果你的仓库启用了 GitHub Pages，可以直接访问：
 ```
-https://你的用户名.github.io/Newapi-checkin/config_generator.html
+https://你的用户名.github.io/Newapi-checkin/index.html
 ```
 
 **启用 GitHub Pages 的方法：**
@@ -46,7 +50,7 @@ https://你的用户名.github.io/Newapi-checkin/config_generator.html
 4. 等待几分钟后，访问上面的链接
 
 **本地使用：**
-1. 下载 `config_generator.html` 文件到本地
+1. 下载 `index.html` 文件到本地
 2. 双击文件，用浏览器打开
 3. 填写站点 URL、Session Cookie 和备注名称
 4. 点击"生成配置"按钮
@@ -59,32 +63,7 @@ https://你的用户名.github.io/Newapi-checkin/config_generator.html
 - 📋 一键复制到剪贴板
 - 🌐 可在线访问，无需安装任何软件
 - 💾 **支持本地存储**，下次打开自动加载配置
-
-### 💻 方式 2：命令行配置助手
-
-```bash
-python config_helper.py
-```
-
-**功能：**
-- ✅ 交互式问答，逐步引导配置
-- ✅ 自动测试账号有效性
-- ✅ 支持生成 JSON 和简单格式
-- ✅ 自动保存到文件
-
-**使用示例：**
-```
---- 配置第 1 个账号 ---
-站点 URL（如 https://xxx.xxx）: https://xxx.xxx
-Session Cookie: MTc2NzQxMzYzM3xEWDhF...
-备注名称（可选，便于识别） [站点1]: 主站
-是否测试此账号配置 (Y/n): y
-正在测试...
-  ✅ 测试成功！用户名: xxx_xxx
-✅ 第 1 个账号添加成功
-
-是否继续添加账号 (y/N): n
-```
+- 🎨 只保留浅色单主题，界面更简洁
 
 ---
 
@@ -95,9 +74,7 @@ Session Cookie: MTc2NzQxMzYzM3xEWDhF...
 ```
 1. 使用配置工具生成配置
    ↓
-   [网页工具] → 填写表单 → 生成配置 → 复制
-   或
-   [命令行工具] → 交互式问答 → 自动测试 → 保存文件
+   [index.html 网页工具] → 填写表单 → 生成配置 → 复制
    ↓
 2. 添加到 GitHub Secrets
    ↓
@@ -130,7 +107,7 @@ https://你的用户名.github.io/Newapi-checkin/
 
 或直接访问配置生成器：
 ```
-https://你的用户名.github.io/Newapi-checkin/config_generator.html
+https://你的用户名.github.io/Newapi-checkin/index.html
 ```
 
 > 💡 **提示：** 将上面的"你的用户名"替换为你的 GitHub 用户名
@@ -201,7 +178,8 @@ https://api.example1.com#MTc2NzQx...,https://api.example2.com#QVFMXzJh...,https:
 #### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/Jasonliu-0/Newapi-checkin.git
+# 换成你自己的仓库地址（或直接用本项目的压缩包解压）
+git clone https://github.com/你的用户名/Newapi-checkin.git
 cd Newapi-checkin
 ```
 
@@ -236,21 +214,21 @@ python checkin.py
 
 #### 5. 测试单个站点（可选）
 
-在配置多个站点前，可以先用测试脚本验证单个站点：
+在配置多个站点前，可以只填一个账号在本地跑一次，验证站点是否可用：
 
 ```bash
-python test_checkin.py <站点URL> <session值>
+NEWAPI_ACCOUNTS="<站点URL>#<session值>" python checkin.py
 ```
 
 **示例：**
 ```bash
-python test_checkin.py https://xxx.xxx MTc2NzQxMzYzM3xEWDhFQVFMX2...
+NEWAPI_ACCOUNTS="https://xxx.xxx#MTc2NzQxMzYzM3xEWDhFQVFMX2..." python checkin.py
 ```
 
-测试脚本会验证：
+运行过程会验证：
 1. Session 是否有效（获取用户信息）
 2. 签到功能是否正常
-3. 签到历史查询是否正常
+3. 账户余额与近 30 天用量统计是否正常
 
 ---
 
@@ -728,7 +706,7 @@ NewAPI 自动签到
 
 #### 步骤 1：使用调试模式查看详细信息
 ```bash
-python test_checkin.py https://api.example.com "你的session" --verbose
+NEWAPI_ACCOUNTS="https://api.example.com#你的session" python checkin.py
 ```
 
 #### 步骤 2：重新获取 Session Cookie
@@ -766,7 +744,7 @@ python test_checkin.py https://api.example.com "你的session" --verbose
 #### 步骤 3：验证新的 Session
 
 ```bash
-python test_checkin.py https://api.example.com "新的session" --verbose
+NEWAPI_ACCOUNTS="https://api.example.com#新的session" python checkin.py
 ```
 
 如果成功，你会看到：
@@ -789,7 +767,7 @@ python test_checkin.py https://api.example.com "新的session" --verbose
 
 **检查方法：**
 ```bash
-python test_checkin.py https://api.example.com "你的session" --verbose
+NEWAPI_ACCOUNTS="https://api.example.com#你的session" python checkin.py
 ```
 
 查看输出的 `Session 长度`，通常应该是 **200-500 字符**。
@@ -867,7 +845,7 @@ $env:HTTPS_PROXY="http://proxy.example.com:8080"
 
 **调试：**
 ```bash
-python test_checkin.py https://api.example.com "你的session" --verbose
+NEWAPI_ACCOUNTS="https://api.example.com#你的session" python checkin.py
 ```
 
 查看 `[调试] 原始响应:` 的内容，可能看到：
@@ -957,18 +935,17 @@ https://site1.com#sess1,https://site2.com#sess2
 
 **解决：**
 使用配置工具生成配置，避免手动编写：
-- 网页工具：`config_generator.html`
-- 命令行工具：`python config_helper.py`
+- 网页工具：`index.html`（双击打开，或访问 GitHub Pages）
 
 ---
 
 ## 🔍 调试技巧
 
-### 使用 --verbose 参数
+### 单独测试单个账号
 
-启用详细调试信息：
+只填一个账号运行，观察完整输出：
 ```bash
-python test_checkin.py https://api.example.com "你的session" --verbose
+NEWAPI_ACCOUNTS="https://api.example.com#你的session" python checkin.py
 ```
 
 你会看到：
@@ -998,7 +975,7 @@ python test_checkin.py https://api.example.com "你的session" --verbose
 
 3. **第三步：测试签到**
    ```bash
-   python test_checkin.py https://api.example.com "新session" --verbose
+   NEWAPI_ACCOUNTS="https://api.example.com#新session" python checkin.py
    ```
 
 4. **第四步：配置到生产**
@@ -1078,7 +1055,7 @@ python test_checkin.py https://api.example.com "你的session" --verbose
 - ❌ 公司电脑
 
 **使用方法：**
-1. 打开 `config_generator.html`
+1. 打开 `index.html`
 2. 填写账号信息
 3. 点击"💾 保存到本地"按钮
 4. 下次访问点击"📂 从本地加载"
@@ -1101,20 +1078,17 @@ python test_checkin.py https://api.example.com "你的session" --verbose
 
 **适用场景：**
 - ✅ 本地开发和测试
-- ✅ 命令行工具使用
 - ✅ 批量管理配置
 
 **使用方法：**
 ```bash
-# 使用命令行配置助手
-python config_helper.py
+# 把配置写入 .env 文件（同一目录下），脚本会自动读取
+# 文件内容示例：
+# NEWAPI_ACCOUNTS=https://site1.com#sess1,https://site2.com#sess2
 
-# 会生成：
-# - newapi_accounts.json
-# - newapi_accounts.txt
-
-# 这些文件已在 .gitignore 中，不会被提交
+python checkin.py
 ```
+`.env` 已在 `.gitignore` 中，不会被提交。
 
 ---
 
@@ -1270,13 +1244,13 @@ Session Cookie 相当于**临时密码**，拥有它的人可以：
 
 | 文件 | 说明 |
 |------|------|
-| `checkin.py` | 主签到脚本 |
+| `checkin.py` | 主签到脚本（含余额与近 30 天用量统计） |
 | `lottery.py` | 中转站抽奖/翻卡模块（哈基米抽奖、维云翻卡） |
-| `notifier.py` | 通知推送模块（邮件/Server酱） |
-| `dingtalk_notifier.py` | 钉钉通知模块 |
-| `test_checkin.py` | 单站点测试脚本 |
-| `config_helper.py` | 命令行配置助手（交互式）|
-| `config_generator.html` | 网页配置生成器（可视化）|
+| `notifier.py` | 通知推送模块（邮件/Server酱）与额度格式化工具 |
+| `dingtalk_notifier.py` | 钉钉通知模块（账户余额 + 近 30 天用量） |
+| `cf_bypass.py` | Cloudflare 挑战应对 |
+| `turnstile_solver.py` | Turnstile 人机验证自动求解 |
+| `index.html` | 单页配置生成器（可视化，仅浅色主题） |
 | `.env.example` | 通知推送环境变量配置模板 |
 | `.github/workflows/checkin.yml` | GitHub Actions 工作流 |
 | `requirements.txt` | Python 依赖 |
@@ -1298,6 +1272,7 @@ MIT License
 
 ## 🙏 致谢
 
+- **[Jasonliu-0/Newapi-checkin](https://github.com/Jasonliu-0/Newapi-checkin)** —— 本项目即由其二次开发而来，基础签到逻辑、Cloudflare/Turnstile 应对、通知模块等均源自该项目
 - [QuantumNous/new-api](https://github.com/QuantumNous/new-api) —— 本项目所对接的上游网关系统
 - 所有通过 Issue、PR 和 Fork 参与改进的贡献者
 - 感谢 [newapi-ai-check-in](https://github.com/aceHubert/newapi-ai-check-in) 等同类项目提供的思路参考
@@ -1320,7 +1295,7 @@ MIT License
 
 你也可以通过以下方式支持：
 
-- 🐛 提交 [Issue](https://github.com/Jasonliu-0/Newapi-checkin/issues) 反馈问题或建议新功能
+- 🐛 提交 Issue 反馈问题或建议新功能
 - 🔀 提交 Pull Request 改进代码
 - 📢 推荐给有需要的朋友
 
@@ -1328,4 +1303,4 @@ MIT License
 
 ## 📮 反馈
 
-如有问题或建议，请提交 [Issue](https://github.com/Jasonliu-0/Newapi-checkin/issues)。
+如有问题或建议，请在本仓库提交 Issue。

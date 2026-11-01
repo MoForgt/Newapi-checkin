@@ -27,10 +27,17 @@ except ImportError:
     send_checkin_notification = None
 
 try:
-    from notifier import send_email_notification, send_serverchan_notification
+    from notifier import (send_email_notification, send_serverchan_notification,
+                          format_money, format_tokens)
 except ImportError:
     send_email_notification = None
     send_serverchan_notification = None
+
+    def format_money(quota) -> str:
+        return str(quota)
+
+    def format_tokens(count) -> str:
+        return str(count)
 
 try:
     from lottery import run_for_account as lottery_run_for_account
@@ -553,6 +560,155 @@ class NewAPICheckin:
             print(f'[错误] 获取签到历史失败: {e}')
             return None
 
+    # 消费日志类型：2 = 消费
+    LOG_TYPE_CONSUME = 2
+
+    @staticmethod
+    def _to_int(value) -> int:
+        """安全转 int"""
+        try:
+            return int(value or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    @staticmethod
+    def _extract_log_items(data) -> list:
+        """兼容不同版本 /api/log/self 的返回结构"""
+        if isinstance(data, dict):
+            items = data.get('items') or data.get('list') or data.get('logs')
+            return items if isinstance(items, list) else []
+        return data if isinstance(data, list) else []
+
+    @classmethod
+    def _log_tokens(cls, item: dict) -> int:
+        """解析单条日志的 token 数（兼容 token 存在 other 字段的版本）"""
+        total = cls._to_int(item.get('prompt_tokens')) + cls._to_int(item.get('completion_tokens'))
+        if total:
+            return total
+        other = item.get('other')
+        if isinstance(other, str) and other:
+            try:
+                other_data = json.loads(other)
+            except (json.JSONDecodeError, TypeError):
+                return 0
+            if isinstance(other_data, dict):
+                return cls._to_int(other_data.get('prompt_tokens')) + \
+                    cls._to_int(other_data.get('completion_tokens'))
+        return 0
+
+    def get_usage_stats(self, days: int = 30, max_pages: int = 40) -> Optional[dict]:
+        """
+        统计最近 N 天的用量（token 总数与消耗额度）
+
+        通过 /api/log/self 分页拉取消费日志后本地汇总，站点不支持时返回 None。
+
+        Args:
+            days: 统计天数，默认 30
+            max_pages: 最大翻页数（每页 100 条），避免异常站点长时间阻塞
+
+        Returns:
+            {'tokens': int, 'quota': int, 'requests': int, 'days': int, 'capped': bool}
+        """
+        end_ts = int(time.time())
+        start_ts = end_ts - days * 86400
+        page_size = 100
+
+        tokens = 0
+        quota = 0
+        request_count = 0
+        seen_ids = set()
+        capped = False
+        type_filter = True
+
+        page = 1
+        while page <= max_pages:
+            params = {
+                'p': page,
+                'page_size': page_size,
+                'start_timestamp': start_ts,
+                'end_timestamp': end_ts,
+            }
+            if type_filter:
+                params['type'] = self.LOG_TYPE_CONSUME
+
+            try:
+                resp = self.session.get(f'{self.base_url}/api/log/self', params=params, timeout=30)
+                if resp.status_code != 200:
+                    if page == 1:
+                        return None
+                    break
+                payload = resp.json()
+            except (requests.exceptions.RequestException, json.JSONDecodeError, ValueError):
+                if page == 1:
+                    return None
+                break
+
+            if not payload.get('success'):
+                if page == 1:
+                    return None
+                break
+
+            raw_items = self._extract_log_items(payload.get('data'))
+
+            # 部分站点不支持 type 过滤，会返回空列表：退回全类型查询并按 type 字段本地筛选
+            if page == 1 and not raw_items and type_filter:
+                type_filter = False
+                continue
+
+            if not raw_items:
+                break
+
+            page_stop = False
+            new_ids = 0
+            for item in raw_items:
+                if not isinstance(item, dict):
+                    continue
+
+                log_id = item.get('id')
+                if log_id is not None:
+                    log_id = str(log_id)
+                    if log_id in seen_ids:
+                        continue
+                    seen_ids.add(log_id)
+                    new_ids += 1
+
+                if not type_filter:
+                    item_type = item.get('type')
+                    if item_type is not None and str(item_type) != str(self.LOG_TYPE_CONSUME):
+                        continue
+
+                created_at = self._to_int(item.get('created_at') or item.get('created_time'))
+                if created_at and created_at < start_ts:
+                    page_stop = True
+                    continue
+
+                request_count += 1
+                quota += abs(self._to_int(item.get('quota')))
+                tokens += self._log_tokens(item)
+
+            # 已翻到统计区间之前的记录
+            if page_stop:
+                break
+            # 站点忽略分页参数时，整页都是重复记录：数据可能不完整
+            if seen_ids and new_ids == 0:
+                capped = True
+                break
+            if len(raw_items) < page_size:
+                break
+
+            page += 1
+
+        if page > max_pages:
+            capped = True
+
+        return {
+            'tokens': tokens,
+            'quota': quota,
+            'requests': request_count,
+            'days': days,
+            'capped': capped,
+        }
+
 
 def parse_accounts(accounts_str: str) -> list:
     """
@@ -808,6 +964,13 @@ def main():
     checkin_results = []
     session_updated = False
 
+    # 仅在配置了推送渠道时统计余额 / 近 30 天用量，避免无谓的额外请求
+    need_usage_stats = bool(
+        os.environ.get('DINGTALK_WEBHOOK')
+        or os.environ.get('EMAIL_SMTP_HOST')
+        or os.environ.get('SERVERCHAN_SENDKEY')
+    )
+
     for i, account in enumerate(accounts, 1):
         url = account['url']
         session_cookie = account['session']
@@ -838,6 +1001,19 @@ def main():
         else:
             print('  用户: 获取失败（可能 session 已过期）')
 
+        # 余额与近 30 天用量（用于通知展示）
+        usage_stats = None
+        balance = (user_info or {}).get('quota')
+        used_quota = (user_info or {}).get('used_quota')
+        if balance is not None:
+            account_total = (balance or 0) + (used_quota or 0)
+            print(f'  余额: 账户 {format_money(account_total)}')
+        if need_usage_stats and user_info:
+            usage_stats = client.get_usage_stats(30)
+            if usage_stats is not None:
+                print(f'  近30天: {format_tokens(usage_stats["tokens"])} tokens，'
+                      f'消耗 {format_money(usage_stats["quota"])}')
+
         # 执行签到
         result = client.checkin()
         if client.session_cookie != session_cookie:
@@ -863,7 +1039,7 @@ def main():
                     quota_str = f'{quota / 1000:.2f}K'
                 else:
                     quota_str = str(quota)
-                print(f'  奖励: +{quota_str} 额度 ({quota:,} tokens)')
+                print(f'  奖励: +{format_money(quota)} 额度 ({quota_str} tokens)')
 
             # 获取本月签到统计
             history = client.get_checkin_history()
@@ -921,6 +1097,9 @@ def main():
                 'success': True,
                 'message': result['message'],
                 'quota_awarded': result.get('quota_awarded'),
+                'balance': balance,
+                'used_quota': used_quota,
+                'usage': usage_stats,
                 'checkin_count': checkin_count,
                 'lottery': lottery_items
             }
@@ -939,7 +1118,10 @@ def main():
                 'success': False,
                 'message': message,
                 'session_expired': 'session' in message.lower() or '认证' in message,
-                'advice': advice
+                'advice': advice,
+                'balance': balance,
+                'used_quota': used_quota,
+                'usage': usage_stats
             }
             checkin_results.append(account_result)
 
