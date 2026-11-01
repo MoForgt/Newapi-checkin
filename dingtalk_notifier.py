@@ -170,31 +170,35 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
     """
     success_list = [r for r in results if r.get('success')]
     fail_list = [r for r in results if not r.get('success')]
-    
+
+    def cell(text) -> str:
+        """清理表格单元格内容：去换行、避免竖线打断表格"""
+        return str(text).replace('|', '/').replace('\n', ' ').strip()
+
+    def is_expired(r) -> bool:
+        message = str(r.get('message', ''))
+        return bool(r.get('session_expired') or 'session' in message.lower()
+                    or '认证' in message or '过期' in message)
+
     # 标题
     lines = [
         '# 📋 NewAPI 签到报告',
         '',
         f'**执行时间**: {execution_time}',
         '',
-        '---',
-        ''
     ]
-    
-    # 成功列表：表格展示奖励、余额与近 30 天用量
-    if success_list:
-        lines.append(f'## ✅ 成功 ({len(success_list)}个)')
-        lines.append('')
-        lines.append('| 账号 | 本次奖励 | 账户余额 | 近30天用量 | 本月已签 |')
-        lines.append('|------|---------|---------|-----------|---------|')
 
-        lottery_lines = []
+    # 成功与失败合并为一张表：成功后紧跟失败，状态放进表头列
+    if results:
+        lines.append('| 状态 | 账号 | 奖励/原因 | 账户余额 |')
+        lines.append('|:---:|------|------------|---------|')
+
+        notes = []          # 表格放不下的细节（30 天用量、抽奖、建议）统一放表格下方
         has_capped = False
-        for r in success_list:
-            name = str(r.get('name', '未知账号')).replace('|', '/')
 
-            quota = r.get('quota_awarded') or 0
-            quota_str = f'+{format_money(quota)}' if quota else '-'
+        for r in results:
+            name = cell(r.get('name', '未知账号'))
+            success = bool(r.get('success'))
 
             balance = r.get('balance')
             if balance is None:
@@ -202,77 +206,58 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
             else:
                 balance_str = format_money(balance + (r.get('used_quota') or 0))
 
-            usage = r.get('usage')
-            if usage is None:
-                usage_str = '-'
+            if success:
+                quota = r.get('quota_awarded') or 0
+                detail = f'+{format_money(quota)}' if quota else '-'
+
+                usage = r.get('usage')
+                usage_str = ''
+                if usage:
+                    tokens = usage.get('tokens') or 0
+                    cost = format_money(usage.get('quota') or 0)
+                    usage_str = f'近30天 {cost} / {format_tokens(tokens)}' if tokens else f'近30天 {cost}'
+                    if usage.get('capped'):
+                        usage_str += '*'
+                        has_capped = True
+
+                checkin_count = r.get('checkin_count')
+                days_str = f'本月已签 {checkin_count} 天' if checkin_count else ''
+
+                extras = '，'.join(x for x in (usage_str, days_str) if x)
+                if extras:
+                    notes.append(f'> 📊 {name}：{extras}')
+
+                lottery = '；'.join(r.get('lottery') or [])
+                if lottery:
+                    notes.append(f'> 🎁 {name}：{lottery}')
             else:
-                tokens = usage.get('tokens') or 0
-                cost = format_money(usage.get('quota') or 0)
-                usage_str = f'{cost} / {format_tokens(tokens)}' if tokens else cost
-                if usage.get('capped'):
-                    usage_str += '*'
-                    has_capped = True
+                detail = cell(r.get('message', '未知错误'))
+                if is_expired(r):
+                    detail = f'⚠️ {detail}'
+                if r.get('advice'):
+                    notes.append(f'> 💡 {name}：{cell(r["advice"])}')
 
-            checkin_count = r.get('checkin_count')
-            days_str = f'{checkin_count} 天' if checkin_count else '-'
-
-            lines.append(f'| {name} | {quota_str} | {balance_str} | {usage_str} | {days_str} |')
-
-            lottery = '；'.join(r.get('lottery') or [])
-            if lottery:
-                lottery_lines.append(f'> 🎁 {name}：{lottery}')
+            lines.append(f'| {"✅" if success else "❌"} | {name} | {detail} | {balance_str} |')
 
         lines.append('')
         if has_capped:
-            lines.append('> ※ 已达翻页上限，近 30 天数据可能偏少')
-        for line in lottery_lines:
-            lines.append(line)
-        if has_capped or lottery_lines:
+            notes.append('> ※ 已达翻页上限，近 30 天数据可能偏少')
+        lines.extend(notes)
+        if notes:
             lines.append('')
-    
-    # 失败列表
-    if fail_list:
-        lines.append(f'## ❌ 失败 ({len(fail_list)}个)')
-        lines.append('')
-        lines.append('| 账号 | 原因 |')
-        lines.append('|------|------|')
-        for r in fail_list:
-            name = r.get('name', '未知账号')
-            message = r.get('message', '未知错误')
-            # 标注 session 失效
-            if r.get('session_expired') or 'session' in message.lower() or '认证' in message or '过期' in message:
-                message = f'⚠️ {message}'
-            lines.append(f'| {name} | {message} |')
 
-        # 建议与余额放在表格下方（避免打断表格渲染）
-        if any(r.get('advice') or r.get('balance') is not None for r in fail_list):
-            lines.append('')
-        for r in fail_list:
-            if r.get('advice'):
-                lines.append(f'> 💡 {r["advice"]}')
-
-        # 失败账号的余额（如已获取到）
-        for r in fail_list:
-            if r.get('balance') is None:
-                continue
-            account_balance = r['balance'] + (r.get('used_quota') or 0)
-            lines.append(f'> 💰 {r.get("name", "未知账号")}：账户余额 {format_money(account_balance)}')
-        lines.append('')
-    
     # 汇总
-    lines.append('---')
-    lines.append('')
-    
     total = len(results)
     success_count = len(success_list)
     fail_count = len(fail_list)
-    
+
+    summary = []
     if fail_count == 0:
-        lines.append(f'**汇总**: 全部成功 ✨ ({success_count}/{total})')
+        summary.append(f'全部成功 ✨ ({success_count}/{total})')
     elif success_count == 0:
-        lines.append(f'**汇总**: 全部失败 ⚠️ ({fail_count}/{total})')
+        summary.append(f'全部失败 ⚠️ ({fail_count}/{total})')
     else:
-        lines.append(f'**汇总**: 成功 {success_count}，失败 {fail_count}')
+        summary.append(f'成功 {success_count}，失败 {fail_count}')
 
     # 余额合计（有数据的账号）
     balance_results = [r for r in results if r.get('balance') is not None]
@@ -280,17 +265,15 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
         total_balance = sum(
             (r.get('balance') or 0) + (r.get('used_quota') or 0) for r in balance_results
         )
-        lines.append(f'**余额合计**: 账户余额 {format_money(total_balance)}')
-    
+        summary.append(f'账户余额合计 {format_money(total_balance)}')
+
+    lines.append('**汇总**: ' + ' · '.join(summary))
+
     # 如果有 session 失效的账号，添加提醒
-    expired_accounts = [r for r in fail_list if r.get('session_expired') or 
-                       'session' in r.get('message', '').lower() or 
-                       '认证' in r.get('message', '') or 
-                       '过期' in r.get('message', '')]
-    if expired_accounts:
+    if any(is_expired(r) for r in fail_list):
         lines.append('')
-        lines.append('> ⚠️ **注意**: 部分账号 Session 已失效，请及时更新 Cookie！')
-    
+        lines.append('> ⚠️ 部分账号 Session 已失效，请及时更新 Cookie！')
+
     return '\n'.join(lines)
 
 
