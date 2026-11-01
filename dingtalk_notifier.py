@@ -6,6 +6,7 @@
 
 import hmac
 import hashlib
+import re
 import base64
 import time
 import urllib.parse
@@ -19,7 +20,7 @@ try:
 except ImportError:
     requests = None
 
-from notifier import format_money, format_tokens
+from notifier import format_money
 
 
 class DingTalkNotifier:
@@ -188,63 +189,93 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
         '',
     ]
 
-    # 成功与失败合并为一张表：成功后紧跟失败，状态放进表头列
-    if results:
-        lines.append('| 状态 | 账号 | 奖励/原因 | 账户余额 |')
-        lines.append('|:---:|------|------------|---------|')
+    notes = []              # 需要补充的长文本（长建议等）
+    checkin_parts = []
+    has_capped = False
 
-        notes = []          # 表格放不下的细节（30 天用量、抽奖、建议）统一放表格下方
-        has_capped = False
+    def lottery_brief(r) -> str:
+        """抽奖结果精简：去掉「第N次：」前缀与 emoji，多注用顿号连接"""
+        items = []
+        for item in r.get('lottery') or []:
+            text = cell(item)
+            text = re.sub(r'第\s*\d+\s*次\s*[：:]\s*', '', text)
+            text = re.sub(r'^[\U0001F000-\U0001FAFF\u2728\u2b50\ufe0f\s]+', '', text)
+            if text:
+                items.append(text)
+        return '、'.join(items) or '-'
+
+    # 表一：签到明细（结果 / 奖励 / 抽奖）
+    if results:
+        lines.append('| 账号 | 签到结果 | 抽奖 |')
+        lines.append('|:--|:--|:--|')
 
         for r in results:
             name = cell(r.get('name', '未知账号'))
-            success = bool(r.get('success'))
 
-            balance = r.get('balance')
-            if balance is None:
-                balance_str = '-'
-            else:
-                balance_str = format_money(balance + (r.get('used_quota') or 0))
-
-            if success:
+            if r.get('success'):
                 quota = r.get('quota_awarded') or 0
-                detail = f'+{format_money(quota)}' if quota else '-'
-
-                usage = r.get('usage')
-                usage_str = ''
-                if usage:
-                    tokens = usage.get('tokens') or 0
-                    cost = format_money(usage.get('quota') or 0)
-                    usage_str = f'近30天 {cost} / {format_tokens(tokens)}' if tokens else f'近30天 {cost}'
-                    if usage.get('capped'):
-                        usage_str += '*'
-                        has_capped = True
+                result_str = f'✅ +{format_money(quota)}' if quota else '✅ 已签到'
 
                 checkin_count = r.get('checkin_count')
-                days_str = f'本月已签 {checkin_count} 天' if checkin_count else ''
-
-                extras = '，'.join(x for x in (usage_str, days_str) if x)
-                if extras:
-                    notes.append(f'> 📊 {name}：{extras}')
-
-                lottery = '；'.join(r.get('lottery') or [])
-                if lottery:
-                    notes.append(f'> 🎁 {name}：{lottery}')
+                if checkin_count:
+                    checkin_parts.append(f'{name} {checkin_count} 天')
             else:
-                detail = cell(r.get('message', '未知错误'))
+                message = cell(r.get('message', ''))
+                lower = message.lower()
                 if is_expired(r):
-                    detail = f'⚠️ {detail}'
-                if r.get('advice'):
-                    notes.append(f'> 💡 {name}：{cell(r["advice"])}')
+                    result_str = '❌ Session 失效，请更新 Cookie'
+                elif 'already checked in' in lower or '已签到' in message or '签到过' in message:
+                    result_str = '❌ 今日已签到'
+                else:
+                    result_str = f'❌ {message or "未知错误"}'
 
-            lines.append(f'| {"✅" if success else "❌"} | {name} | {detail} | {balance_str} |')
+                # 短建议并入单元格，长建议放表格下方，避免把表格撑宽
+                advice = cell(r['advice']) if r.get('advice') else ''
+                if advice and not is_expired(r) and advice not in result_str:
+                    if len(advice) <= 12:
+                        result_str = f'{result_str}，{advice}'
+                    else:
+                        notes.append(f'> 💡 {name}：{advice}')
+
+            lines.append(f'| {name} | {result_str} | {lottery_brief(r)} |')
 
         lines.append('')
-        if has_capped:
-            notes.append('> ※ 已达翻页上限，近 30 天数据可能偏少')
+
+    # 表二：站点统计（近 30 天消耗 / 账户余额）
+    stat_list = [r for r in results if r.get('balance') is not None or r.get('usage')]
+    if stat_list:
+        lines.append('| 账号 | 30天消耗 | 账户余额 |')
+        lines.append('|:--|:--|:--|')
+
+        for r in stat_list:
+            name = cell(r.get('name', '未知账号'))
+
+            usage = r.get('usage')
+            if usage:
+                cost_str = format_money(usage.get('quota') or 0)
+                if usage.get('capped'):
+                    cost_str += '*'
+                    has_capped = True
+            else:
+                cost_str = '-'
+
+            balance = r.get('balance')
+            balance_str = '-' if balance is None else format_money(
+                balance + (r.get('used_quota') or 0)
+            )
+
+            lines.append(f'| {name} | {cost_str} | {balance_str} |')
+
+        lines.append('')
+
+    # 表格下方补充信息
+    if checkin_parts:
+        notes.insert(0, '> 📌 本月已签：' + '、'.join(checkin_parts))
+    if has_capped:
+        notes.append('> ※ 已达翻页上限，近 30 天数据可能偏少')
+    if notes:
         lines.extend(notes)
-        if notes:
-            lines.append('')
+        lines.append('')
 
     # 汇总
     total = len(results)
@@ -268,11 +299,6 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
         summary.append(f'账户余额合计 {format_money(total_balance)}')
 
     lines.append('**汇总**: ' + ' · '.join(summary))
-
-    # 如果有 session 失效的账号，添加提醒
-    if any(is_expired(r) for r in fail_list):
-        lines.append('')
-        lines.append('> ⚠️ 部分账号 Session 已失效，请及时更新 Cookie！')
 
     return '\n'.join(lines)
 
