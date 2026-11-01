@@ -181,42 +181,53 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
         ''
     ]
     
-    # 成功列表：按账号展示奖励、余额与近 30 天用量
+    # 成功列表：表格展示奖励、余额与近 30 天用量
     if success_list:
         lines.append(f'## ✅ 成功 ({len(success_list)}个)')
         lines.append('')
+        lines.append('| 账号 | 本次奖励 | 账户余额 | 近30天用量 | 本月已签 |')
+        lines.append('|------|---------|---------|-----------|---------|')
+
+        lottery_lines = []
+        has_capped = False
         for r in success_list:
-            lines.append(f'**{r.get("name", "未知账号")}**')
-            lines.append('')
+            name = str(r.get('name', '未知账号')).replace('|', '/')
 
             quota = r.get('quota_awarded') or 0
-            lines.append(f'- 本次奖励：+{format_money(quota)}' if quota else '- 本次奖励：-')
+            quota_str = f'+{format_money(quota)}' if quota else '-'
 
             balance = r.get('balance')
-            used_quota = r.get('used_quota')
-            if balance is not None:
-                account_balance = balance + (used_quota or 0)
-                lines.append(f'- 账户余额：{format_money(account_balance)}')
+            if balance is None:
+                balance_str = '-'
+            else:
+                balance_str = format_money(balance + (r.get('used_quota') or 0))
 
             usage = r.get('usage')
             if usage is None:
-                lines.append('- 近30天：数据不可用')
+                usage_str = '-'
             else:
                 tokens = usage.get('tokens') or 0
-                cost = usage.get('quota') or 0
-                capped = '（已达翻页上限，可能偏少）' if usage.get('capped') else ''
-                if tokens:
-                    lines.append(f'- 近30天：{format_tokens(tokens)} tokens，消耗 {format_money(cost)}{capped}')
-                else:
-                    lines.append(f'- 近30天：消耗 {format_money(cost)}{capped}')
+                cost = format_money(usage.get('quota') or 0)
+                usage_str = f'{cost} / {format_tokens(tokens)}' if tokens else cost
+                if usage.get('capped'):
+                    usage_str += '*'
+                    has_capped = True
 
             checkin_count = r.get('checkin_count')
-            if checkin_count:
-                lines.append(f'- 本月已签：{checkin_count} 天')
+            days_str = f'{checkin_count} 天' if checkin_count else '-'
+
+            lines.append(f'| {name} | {quota_str} | {balance_str} | {usage_str} | {days_str} |')
 
             lottery = '；'.join(r.get('lottery') or [])
             if lottery:
-                lines.append(f'- 抽奖：{lottery}')
+                lottery_lines.append(f'> 🎁 {name}：{lottery}')
+
+        lines.append('')
+        if has_capped:
+            lines.append('> ※ 已达翻页上限，近 30 天数据可能偏少')
+        for line in lottery_lines:
+            lines.append(line)
+        if has_capped or lottery_lines:
             lines.append('')
     
     # 失败列表
