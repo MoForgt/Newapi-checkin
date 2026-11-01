@@ -20,7 +20,7 @@ try:
 except ImportError:
     requests = None
 
-from notifier import format_money
+from notifier import format_money, format_tokens
 
 
 class DingTalkNotifier:
@@ -189,10 +189,6 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
         '',
     ]
 
-    notes = []              # 需要补充的长文本（长建议等）
-    checkin_parts = []
-    has_capped = False
-
     def lottery_brief(r) -> str:
         """抽奖结果精简：去掉「第N次：」前缀与 emoji，多注用顿号连接"""
         items = []
@@ -215,10 +211,6 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
             if r.get('success'):
                 quota = r.get('quota_awarded') or 0
                 result_str = f'✅ +{format_money(quota)}' if quota else '✅ 已签到'
-
-                checkin_count = r.get('checkin_count')
-                if checkin_count:
-                    checkin_parts.append(f'{name} {checkin_count} 天')
             else:
                 message = cell(r.get('message', ''))
                 lower = message.lower()
@@ -229,13 +221,10 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
                 else:
                     result_str = f'❌ {message or "未知错误"}'
 
-                # 短建议并入单元格，长建议放表格下方，避免把表格撑宽
+                # 短建议并入单元格，过长的建议直接忽略，避免把表格撑宽
                 advice = cell(r['advice']) if r.get('advice') else ''
-                if advice and not is_expired(r) and advice not in result_str:
-                    if len(advice) <= 12:
-                        result_str = f'{result_str}，{advice}'
-                    else:
-                        notes.append(f'> 💡 {name}：{advice}')
+                if advice and not is_expired(r) and advice not in result_str and len(advice) <= 12:
+                    result_str = f'{result_str}，{advice}'
 
             lines.append(f'| {name} | {result_str} | {lottery_brief(r)} |')
 
@@ -251,13 +240,13 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
             name = cell(r.get('name', '未知账号'))
 
             usage = r.get('usage')
-            if usage:
-                cost_str = format_money(usage.get('quota') or 0)
-                if usage.get('capped'):
-                    cost_str += '*'
-                    has_capped = True
-            else:
+            if not usage:
                 cost_str = '-'
+            else:
+                cost = format_money(usage.get('quota') or 0)
+                tokens = usage.get('tokens') or 0
+                # 金额在前、token 数在后，便于横向对比
+                cost_str = f'{cost} / {format_tokens(tokens)}' if tokens else cost
 
             balance = r.get('balance')
             balance_str = '-' if balance is None else format_money(
@@ -266,15 +255,6 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
 
             lines.append(f'| {name} | {cost_str} | {balance_str} |')
 
-        lines.append('')
-
-    # 表格下方补充信息
-    if checkin_parts:
-        notes.insert(0, '> 📌 本月已签：' + '、'.join(checkin_parts))
-    if has_capped:
-        notes.append('> ※ 已达翻页上限，近 30 天数据可能偏少')
-    if notes:
-        lines.extend(notes)
         lines.append('')
 
     # 汇总
