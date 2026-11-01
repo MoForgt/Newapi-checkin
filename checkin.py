@@ -1006,8 +1006,7 @@ def main():
         balance = (user_info or {}).get('quota')
         used_quota = (user_info or {}).get('used_quota')
         if balance is not None:
-            account_total = (balance or 0) + (used_quota or 0)
-            print(f'  余额: 账户 {format_money(account_total)}')
+            print(f'  余额: 剩余 {format_money(balance)}')
         if need_usage_stats and user_info:
             usage_stats = client.get_usage_stats(30)
             if usage_stats is not None:

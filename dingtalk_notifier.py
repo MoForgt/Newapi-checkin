@@ -159,8 +159,8 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
             - success: 是否成功
             - message: 结果消息
             - quota_awarded: 本次获得的额度（可选）
-            - balance: 当前可用额度（与 used_quota 相加得到账户余额，可选）
-            - used_quota: 累计已用额度（可选）
+            - balance: 当前剩余可用额度（可选）
+            - used_quota: 累计已用额度（可选，仅保留数据，不参与展示）
             - usage: 近 30 天用量 {'tokens': int, 'quota': int, 'capped': bool}（可选）
             - checkin_count: 本月签到天数（可选）
             - session_expired: 是否 session 失效（可选）
@@ -230,10 +230,10 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
 
         lines.append('')
 
-    # 表二：站点统计（近 30 天消耗 / 账户余额）
+    # 表二：站点统计（近 30 天消耗 / 剩余余额）
     stat_list = [r for r in results if r.get('balance') is not None or r.get('usage')]
     if stat_list:
-        lines.append('| 账号 | 30天消耗 | 账户余额 |')
+        lines.append('| 账号 | 30天消耗 | 剩余余额 |')
         lines.append('|:--|:--|:--|')
 
         for r in stat_list:
@@ -249,9 +249,7 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
                 cost_str = f'{cost} / {format_tokens(tokens)}' if tokens else cost
 
             balance = r.get('balance')
-            balance_str = '-' if balance is None else format_money(
-                balance + (r.get('used_quota') or 0)
-            )
+            balance_str = '-' if balance is None else format_money(balance)
 
             lines.append(f'| {name} | {cost_str} | {balance_str} |')
 
@@ -273,10 +271,8 @@ def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> 
     # 余额合计（有数据的账号）
     balance_results = [r for r in results if r.get('balance') is not None]
     if balance_results:
-        total_balance = sum(
-            (r.get('balance') or 0) + (r.get('used_quota') or 0) for r in balance_results
-        )
-        summary.append(f'账户余额合计 {format_money(total_balance)}')
+        total_balance = sum(r.get('balance') or 0 for r in balance_results)
+        summary.append(f'剩余余额合计 {format_money(total_balance)}')
 
     lines.append('**汇总**: ' + ' · '.join(summary))
 
